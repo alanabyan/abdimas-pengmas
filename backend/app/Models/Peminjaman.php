@@ -13,9 +13,9 @@ class Peminjaman extends Model
     protected $table = 'peminjamans';
 
     // Daftar kolom yang boleh diisi (sesuaikan dengan migration lu)
-    protected $fillable = [
+    protected $guarded = [
         'barang_id',
-        'warga_id',
+        'id_warga',
         'marbot_id',
         'keperluan',
         'jumlah',
