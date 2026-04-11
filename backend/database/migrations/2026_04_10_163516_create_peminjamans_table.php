@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('warga_id')->constrained('wargas')->restrictOnDelete();
             $table->foreignId('marbot_id')->constrained('marbots')->restrictOnDelete();
             $table->string('keperluan');
-            $table->unsignedInteger('jumlah')->default(1);
+            $table->unsignedInteger('jumlah');
             $table->string('kondisi_pinjam');
             $table->date('tgl_pinjam');
             $table->date('tgl_rencana_kembali');

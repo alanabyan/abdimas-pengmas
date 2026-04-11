@@ -12,6 +12,7 @@ class Peminjaman extends Model
 
     protected $table = 'peminjamans';
 
+<<<<<<< HEAD
     // Status yang tersedia
     const STATUS_MENUNGGU    = 'Menunggu';
     const STATUS_AKTIF       = 'Aktif';
@@ -27,8 +28,12 @@ class Peminjaman extends Model
     ];
 
     protected $fillable = [
+=======
+    // Daftar kolom yang boleh diisi (sesuaikan dengan migration lu)
+    protected $guarded = [
+>>>>>>> f9c51f61d1d276e3dfdd765a7264598cb0e1f991
         'barang_id',
-        'warga_id',
+        'id_warga',
         'marbot_id',
         'keperluan',
         'jumlah',
