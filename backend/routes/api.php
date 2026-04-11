@@ -12,4 +12,6 @@ use App\Http\Controllers\Api\v1\PeminjamanController;
 Route::prefix('v1')->group(function () {
     // Jalur untuk fitur peminjaman lu
     Route::apiResource('peminjaman', PeminjamanController::class);
+    Route::put('peminjaman/{id}', [PeminjamanController::class, 'update']);
+    Route::delete('peminjaman/{id}', [PeminjamanController::class, 'destroy']);
 });

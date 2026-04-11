@@ -36,15 +36,20 @@ class Peminjaman extends Model
 
     public function warga()
     {
-<<<<<<< Updated upstream
+        // Karena di migration, foreign key-nya namanya 'warga_id' dan di model Warga, primary key-nya 'id_warga', jadi kita harus jelasin ke Laravel
         return $this->belongsTo(Warga::class);
-=======
+
         return $this->belongsTo(Warga::class, 'warga_id', 'id_warga');
->>>>>>> Stashed changes
     }
     
     public function marbot()
     {
         return $this->belongsTo(User::class, 'marbot_id');
     }
+
+    protected $casts = [
+    'tgl_pinjam' => 'date:Y-m-d',
+    'tgl_rencana_kembali' => 'date:Y-m-d',
+    'tgl_kembali' => 'date:Y-m-d',
+];
 }
