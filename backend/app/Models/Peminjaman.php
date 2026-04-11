@@ -48,8 +48,8 @@ class Peminjaman extends Model
     }
 
     protected $casts = [
-        'tgl_pinjam' => 'date:Y-m-d',
-        'tgl_rencana_kembali' => 'date:Y-m-d',
-        'tgl_kembali' => 'date:Y-m-d',
-    ];
+    'tgl_pinjam' => 'date:Y-m-d',
+    'tgl_rencana_kembali' => 'date:Y-m-d',
+    'tgl_kembali' => 'date:Y-m-d',
+];
 }
