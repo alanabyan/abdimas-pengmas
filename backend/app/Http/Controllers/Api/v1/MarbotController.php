@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class MarbotController extends Controller
 {
@@ -17,7 +18,7 @@ class MarbotController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Marbot::orderBy('nama');
+        $query = Marbot::orderBy('nama_marbot');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -27,7 +28,7 @@ class MarbotController extends Controller
             });
         }
 
-        $marbots = $query->select(['id', 'nama', 'email', 'no_hp', 'is_aktif', 'created_at'])
+        $marbots = $query->select(['id', 'nama_marbot', 'email', 'aktif', 'created_at'])
             ->paginate(15);
 
         return response()->json($marbots);
@@ -40,23 +41,21 @@ class MarbotController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'nama'     => 'required|string|max:150',
+            'nama_marbot'     => 'required|string|max:150',
             'email'    => 'required|email|unique:marbots,email',
-            'no_hp'    => 'nullable|string|max:20',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
         $marbot = Marbot::create([
-            'nama'     => $request->nama,
+            'nama_marbot'     => $request->nama,
             'email'    => $request->email,
-            'no_hp'    => $request->no_hp,
             'password' => Hash::make($request->password),
-            'is_aktif' => true,
+            'aktif' => true,
         ]);
 
         return response()->json([
             'message' => 'Akun Marbot berhasil dibuat.',
-            'data'    => $marbot->only(['id', 'nama', 'email', 'no_hp', 'is_aktif', 'created_at']),
+            'data'    => $marbot->only(['id', 'nama_marbot', 'email', 'aktif', 'created_at']),
         ], 201);
     }
 
@@ -67,7 +66,7 @@ class MarbotController extends Controller
     public function show(Marbot $marbot): JsonResponse
     {
         return response()->json([
-            'data' => $marbot->only(['id', 'nama', 'email', 'no_hp', 'is_aktif', 'created_at']),
+            'data' => $marbot->only(['id', 'nama_marbot', 'email', 'aktif', 'created_at']),
         ]);
     }
 
@@ -78,24 +77,23 @@ class MarbotController extends Controller
     public function update(Request $request, Marbot $marbot): JsonResponse
     {
         $request->validate([
-            'nama'     => 'required|string|max:150',
-            'email'    => 'required|email|unique:marbots,email,' . $marbot->id,
-            'no_hp'    => 'nullable|string|max:20',
-            'is_aktif' => 'nullable|boolean',
+            'nama_marbot'     => 'required|string|max:150',
+            'email' => ['required', 'email', Rule::unique('marbots')->ignore($marbot->id)],
+            'aktif' => 'nullable|boolean',
         ]);
 
         // Cegah Marbot menonaktifkan dirinya sendiri
-        if ($request->user()->id === $marbot->id && $request->is_aktif === false) {
+        if ($request->user()->id === $marbot->id && $request->aktif === false) {
             return response()->json([
                 'message' => 'Anda tidak dapat menonaktifkan akun Anda sendiri.',
             ], 422);
         }
 
-        $marbot->update($request->only(['nama', 'email', 'no_hp', 'is_aktif']));
+        $marbot->update($request->only(['nama_marbot', 'email', 'aktif']));
 
         return response()->json([
             'message' => 'Data Marbot berhasil diperbarui.',
-            'data'    => $marbot->fresh()->only(['id', 'nama', 'email', 'no_hp', 'is_aktif']),
+            'data'    => $marbot->fresh()->only(['id', 'nama_marbot', 'email', 'aktif']),
         ]);
     }
 
@@ -112,7 +110,7 @@ class MarbotController extends Controller
             ], 422);
         }
 
-        $jumlahAktif = Marbot::where('is_aktif', true)
+        $jumlahAktif = Marbot::where('aktif', true)
             ->where('id', '!=', $marbot->id)
             ->count();
 
@@ -122,7 +120,7 @@ class MarbotController extends Controller
             ], 422);
         }
 
-        $marbot->update(['is_aktif' => false]);
+        $marbot->update(['aktif' => false]);
         $marbot->tokens()->delete();
 
         return response()->json(['message' => 'Akun Marbot berhasil dinonaktifkan.']);
