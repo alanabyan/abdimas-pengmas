@@ -2,33 +2,36 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\v1\PeminjamanController;
+use App\Http\Controllers\Api\v1\WargaController;
+use App\Http\Controllers\Api\v1\BarangController;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-use App\Http\Controllers\Api\v1\PeminjamanController;
-use App\Http\Controllers\Api\v1\WargaController;
-use App\Http\Controllers\Api\v1\BarangController;
-
 Route::prefix('v1')->group(function () {
-<<<<<<< Updated upstream
-=======
 
+    // --- Fitur Auth (Punya Alan) ---
     Route::prefix('auth')->group(function () {
         // POST /api/v1/auth/login
-        // Body : { email, password }
-        // Return: { token, user: { id, nama, email, aktif } }
         Route::post('login', [AuthController::class, 'login']);
-        Route::get('warga', [WargaController::class, 'index']);
-        Route::get('barang', [BarangController::class, 'index']);
     });
 
->>>>>>> Stashed changes
-    // Jalur untuk fitur peminjaman lu
+    // --- Fitur Peminjaman, Warga, & Barang (Punya Lu) ---
+    // apiResource udah otomatis nanganin GET (index/show), POST (store), dll.
     Route::apiResource('peminjaman', PeminjamanController::class);
     Route::apiResource('warga', WargaController::class);
     Route::apiResource('barang', BarangController::class);
+
+    // Tambahan rute manual (kalau dibutuhin spesifik)
     Route::put('peminjaman/{id}', [PeminjamanController::class, 'update']);
     Route::delete('peminjaman/{id}', [PeminjamanController::class, 'destroy']);
 });
