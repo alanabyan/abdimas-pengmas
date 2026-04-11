@@ -1,12 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AuthLayout from '@/layouts/AuthLayout.vue'
+import DaftarPinjaman from '../views/peminjaman/DaftarPinjaman.vue'
 
 const Login = () => import('@/views/auth/LoginPage.vue')
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
 
+  // --- Ini Route punya Alan (Auth) ---
   {
     path: '/',
     component: AuthLayout,
@@ -14,6 +16,13 @@ const routes = [
       { path: 'login', name: 'Login', component: Login, meta: { guest: true } },
     ],
   },
+
+  // --- Ini Route punya Lu (Peminjaman) ---
+  {
+    path: '/peminjaman',
+    name: 'peminjaman.index',
+    component: DaftarPinjaman
+  }
 ]
 
 const router = createRouter({
@@ -24,6 +33,7 @@ const router = createRouter({
   },
 })
 
+// --- Middleware/Penjaga Pintu punya Alan ---
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
   if (!auth.isInitialized) await auth.initialize()
