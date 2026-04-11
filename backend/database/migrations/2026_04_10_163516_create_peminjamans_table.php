@@ -30,6 +30,7 @@ return new class extends Migration
             ])->default('Menunggu');
             $table->text('catatan')->nullable();
             $table->timestamps();
+            
             $table->index('status');
             $table->index('tgl_pinjam');
             $table->index('tgl_rencana_kembali');
