@@ -13,6 +13,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "axios": "^1.15.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.31",
     "vue-router": "^5.0.4"
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@vitejs/plugin-vue": "^6.0.5",
+    "autoprefixer": "^10.4.27",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-oxlint": "~1.57.0",
@@ -27,7 +29,9 @@
     "globals": "^17.4.0",
     "npm-run-all2": "^8.0.4",
     "oxlint": "~1.57.0",
+    "postcss": "^8.5.9",
     "prettier": "3.8.1",
+    "tailwindcss": "^3.4.19",
     "vite": "^8.0.3",
     "vite-plugin-vue-devtools": "^8.1.1"
   },
