@@ -13,4 +13,5 @@ Route::prefix('v1')->group(function () {
     // Jalur untuk fitur peminjaman lu
     Route::apiResource('peminjaman', PeminjamanController::class);
     Route::post('/peminjaman/{id}/kembalikan', [PeminjamanController::class, 'kembalikan']);
+    Route::put('/peminjaman/kembali/{id}', [PeminjamanController::class, 'kembali']);
 });
