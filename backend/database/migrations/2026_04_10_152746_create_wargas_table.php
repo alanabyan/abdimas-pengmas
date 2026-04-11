@@ -6,24 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('wargas', function (Blueprint $table) {
-            $table->id('id_warga');
+            $table->id();
             $table->string('nama_warga');
-            $table->string('no_hp');
+            $table->string('no_hp', 20);
             $table->text('alamat');
-            $table->string('rt_rw');
+            $table->string('rt_rw', 20)->nullable()->comment('Contoh: RT 03/RW 05');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('wargas');

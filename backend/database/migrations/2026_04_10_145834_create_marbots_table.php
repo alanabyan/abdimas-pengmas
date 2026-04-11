@@ -6,24 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('marbots', function (Blueprint $table) {
-            $table->id('id_marbot');
+            $table->id();
             $table->string('nama_marbot');
-            $table->string('email');
+            $table->string('email')->unique();
             $table->string('password');
-            $table->boolean('aktif');
+            $table->boolean('aktif')->default(true);
+            $table->rememberToken();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('marbots');
