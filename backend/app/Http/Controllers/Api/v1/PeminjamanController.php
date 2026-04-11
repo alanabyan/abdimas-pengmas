@@ -23,47 +23,46 @@ class PeminjamanController extends Controller
 
 
     public function store(Request $request)
-    {
-        // 1. Validasi inputan dari form
+{
+    try {
+        // 1. Validasi: Ganti 'exists:wargas,id_warga' jadi 'exists:wargas,id'
         $request->validate([
             'barang_id' => 'required|exists:barangs,id',
-            'warga_id' => 'required|exists:wargas,id_warga',
-            'jumlah' => 'required|integer|min:1',
+            'warga_id'  => 'required|exists:wargas,id', // <--- PAKAI 'id' DI SINI
+            'jumlah'    => 'required|integer|min:1',
             'tgl_pinjam' => 'required|date',
             'tgl_rencana_kembali' => 'required|date|after_or_equal:tgl_pinjam',
         ]);
 
-        // 2. Gunakan Transaction biar kalau ada error, database nggak berantakan
         return DB::transaction(function () use ($request) {
-            $barang = Barang::findOrFail($request->barang_id);
+            $barang = \App\Models\Barang::findOrFail($request->barang_id);
 
-            // Cek apakah stok cukup?
-            if ($barang->stok < $request->jumlah) {
-                return response()->json(['message' => 'Stok barang tidak mencukupi!'], 400);
+            if ($barang->stok_tersedia < $request->jumlah) {
+                return response()->json(['message' => 'Stok tidak cukup!'], 400);
             }
 
-            // 3. Simpan data peminjaman
-            $peminjaman = Peminjaman::create([
-                'barang_id' => $request->barang_id,
-                'warga_id' => $request->warga_id,
-                'marbot_id' => 1, // Sementara hardcode dulu, nanti pake auth
-                'keperluan' => $request->keperluan,
-                'jumlah' => $request->jumlah,
-                'kondisi_pinjam' => $request->kondisi_pinjam,
-                'tgl_pinjam' => $request->tgl_pinjam,
-                'tgl_rencana_kembali' => $request->tgl_rencana_kembali,
-                'status' => 'Dipinjam',
-            ]);
+            // 2. Simpan: Pastikan kolom Primary Key untuk warga di sini juga benar
+            $peminjaman = \App\Models\Peminjaman::create([
+    'barang_id'           => $request->barang_id,
+    'warga_id'            => $request->warga_id, // <--- BALIKIN KE warga_id
+    'marbot_id'           => 1,
+    'keperluan'           => $request->keperluan,
+    'jumlah'              => $request->jumlah,
+    'kondisi_pinjam'      => $request->kondisi_pinjam,
+    'tgl_pinjam'          => $request->tgl_pinjam,
+    'tgl_rencana_kembali' => $request->tgl_rencana_kembali,
+    'status'              => 'Pinjam',
+]);
 
-            // 4. POTONG STOK BARANG (Tugas krusial lu)
-            $barang->decrement('stok', $request->jumlah);
+            $barang->decrement('stok_tersedia', $request->jumlah);
 
-            return response()->json([
-                'message' => 'Peminjaman berhasil dicatat!',
-                'data' => $peminjaman
-            ], 201);
+            return response()->json(['message' => 'Berhasil!', 'data' => $peminjaman], 201);
         });
+
+    } catch (\Exception $e) {
+        return response()->json(['message' => $e->getMessage()], 500);
     }
+}
 
     public function kembali(Request $request, $id)
     {
@@ -100,8 +99,9 @@ class PeminjamanController extends Controller
     // 1. Validasi input
     $request->validate([
         'barang_id' => 'required|exists:barangs,id',
-        'warga_id'  => 'required|exists:wargas,id_warga',
+        'warga_id'  => 'required|exists:wargas,id',
         'jumlah'    => 'required|integer|min:1',
+        'tgl_rencana_kembali' => 'required|date|after_or_equal:tgl_pinjam',
     ]);
 
     return DB::transaction(function () use ($request, $id) {

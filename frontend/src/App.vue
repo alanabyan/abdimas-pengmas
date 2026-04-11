@@ -1,5 +1,9 @@
 <template>
+<<<<<<< Updated upstream
   <router-view></router-view>
+=======
+  <RouterView />
+>>>>>>> Stashed changes
 </template>
 
 <script setup>
