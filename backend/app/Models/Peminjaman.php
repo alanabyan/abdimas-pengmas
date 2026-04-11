@@ -36,7 +36,11 @@ class Peminjaman extends Model
 
     public function warga()
     {
+<<<<<<< Updated upstream
         return $this->belongsTo(Warga::class);
+=======
+        return $this->belongsTo(Warga::class, 'warga_id', 'id_warga');
+>>>>>>> Stashed changes
     }
     
     public function marbot()

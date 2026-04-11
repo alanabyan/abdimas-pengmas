@@ -10,12 +10,26 @@ use Illuminate\Support\Facades\DB;
 
 class PeminjamanController extends Controller
 {
+<<<<<<< Updated upstream
+=======
+    public function index()
+    {
+        $peminjaman = Peminjaman::with(['barang', 'warga'])->latest()->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar Data Peminjaman',
+            'data'    => $peminjaman
+        ]);
+    }
+
+>>>>>>> Stashed changes
     public function store(Request $request)
     {
         // 1. Validasi inputan dari form
         $request->validate([
             'barang_id' => 'required|exists:barangs,id',
-            'warga_id' => 'required|exists:wargas,id',
+            'warga_id' => 'required|exists:wargas,id_warga',
             'jumlah' => 'required|integer|min:1',
             'tgl_pinjam' => 'required|date',
             'tgl_rencana_kembali' => 'required|date|after_or_equal:tgl_pinjam',
@@ -30,6 +44,10 @@ class PeminjamanController extends Controller
                 return response()->json(['message' => 'Stok barang tidak mencukupi!'], 400);
             }
 
+<<<<<<< Updated upstream
+=======
+   
+>>>>>>> Stashed changes
             // 3. Simpan data peminjaman
             $peminjaman = Peminjaman::create([
                 'barang_id' => $request->barang_id,
@@ -40,7 +58,7 @@ class PeminjamanController extends Controller
                 'kondisi_pinjam' => $request->kondisi_pinjam,
                 'tgl_pinjam' => $request->tgl_pinjam,
                 'tgl_rencana_kembali' => $request->tgl_rencana_kembali,
-                'status' => 'Aktif',
+                'status' => 'Dipinjam',
             ]);
 
             // 4. POTONG STOK BARANG (Tugas krusial lu)
@@ -52,4 +70,38 @@ class PeminjamanController extends Controller
             ], 201);
         });
     }
+<<<<<<< Updated upstream
 }
+=======
+    public function kembali(Request $request, $id)
+{
+    // 1. Cari data peminjamannya
+    $peminjaman = Peminjaman::findOrFail($id);
+
+    // 2. Cek statusnya. Kalau udah kembali, jangan dikembaliin lagi (biar stok gak nambah terus)
+    if ($peminjaman->status === 'Kembali') {
+        return response()->json(['message' => 'Barang ini sudah dikembalikan sebelumnya!'], 400);
+    }
+
+    // 3. Update data peminjaman
+    return DB::transaction(function () use ($peminjaman, $request) {
+    $peminjaman->update([
+        'tgl_kembali' => now()->toDateString(),
+        'kondisi_kembali' => $request->kondisi_kembali ?? 'Baik',
+        'status' => 'Kembali',
+    ]);
+    
+
+    // 4. BALIKIN STOKNYA (Logic Utama)
+    $barang = \App\Models\Barang::find($peminjaman->barang_id);
+    $barang->increment('stok', $peminjaman->jumlah);
+
+    return response()->json([
+        'message' => 'Barang berhasil dikembalikan, stok bertambah!',
+        'data' => $peminjaman->load('barang') // biar keliatan stok terbarunya
+    ]);
+    });
+}
+}
+
+>>>>>>> Stashed changes
