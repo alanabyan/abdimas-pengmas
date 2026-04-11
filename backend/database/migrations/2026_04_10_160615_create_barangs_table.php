@@ -6,24 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
-{
-    Schema::create('barangs', function (Blueprint $table) {
-        $table->id();
-        $table->string('nama_barang');
-        $table->integer('stok')->default(0);
-        $table->string('kondisi')->default('Baik');
-        $table->text('deskripsi')->nullable();
-        $table->timestamps();
-    });
-}
+    {
+        Schema::create('barangs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('kategori_id')->constrained('kategoris')->restrictOnDelete();
+            $table->string('nama_barang');
+            $table->text('deskripsi')->nullable();
+            $table->unsignedInteger('stok_total')->default(1);
+            $table->unsignedInteger('stok_tersedia')->default(1);
+            $table->enum('kondisi', ['Baik', 'Rusak Ringan', 'Rusak Berat'])->default('Baik');
+            $table->string('foto_url')->nullable();
+            $table->string('lokasi')->nullable()->comment('Lokasi penyimpanan di masjid');
+            $table->timestamps();
+        });
+    }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('barangs');
