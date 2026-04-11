@@ -10,6 +10,17 @@ use Illuminate\Support\Facades\DB;
 
 class PeminjamanController extends Controller
 {
+    public function index()
+    {
+        $peminjaman = Peminjaman::with(['barang', 'warga'])->latest()->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar Data Peminjaman',
+            'data'    => $peminjaman
+        ]);
+    }
+    
     public function store(Request $request)
     {
         // 1. Validasi inputan dari form
@@ -29,6 +40,16 @@ class PeminjamanController extends Controller
             if ($barang->stok < $request->jumlah) {
                 return response()->json(['message' => 'Stok barang tidak mencukupi!'], 400);
             }
+
+            $barang = Barang::findOrFail($request->barang_id);
+
+    // CEK STOK DI SINI
+    if ($barang->stok < $request->jumlah) {
+        return response()->json([
+            'message' => 'Waduh Wa, stok barang nggak cukup!',
+            'stok_saat_ini' => $barang->stok
+        ], 400); // 400 itu error buat Bad Request
+    }
 
             // 3. Simpan data peminjaman
             $peminjaman = Peminjaman::create([

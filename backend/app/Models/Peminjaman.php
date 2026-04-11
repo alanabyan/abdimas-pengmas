@@ -57,7 +57,7 @@ class Peminjaman extends Model
 
     public function warga()
     {
-        return $this->belongsTo(Warga::class, 'warga_id');
+        return $this->belongsTo(Warga::class, 'id_warga', 'id_warga');
     }
 
     public function marbot()
