@@ -25,6 +25,27 @@ class PeminjamanController extends Controller
     }
 
     /**
+ * Tampilkan detail peminjaman satuan (PENTING buat form validasi)
+ */
+public function show($id)
+{
+    // panggil relasi barang dan warga biar nama-namanya muncul di form [cite: 186]
+    $peminjaman = Peminjaman::with(['barang', 'warga'])->find($id);
+
+    if (!$peminjaman) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Aduh Wa, datanya emang nggak ada di database!'
+        ], 404);
+    }
+
+    return response()->json([
+        'success' => true,
+        'data'    => $peminjaman
+    ]);
+}
+
+    /**
      * Simpan peminjaman baru + Potong Stok
      */
     public function store(Request $request)
@@ -174,4 +195,30 @@ class PeminjamanController extends Controller
     });
 }
 
+public function validasiKembali(Request $request, $id)
+{
+    $request->validate([
+        'kondisi_kembali' => 'required|in:Baik,Rusak,Hilang',
+        'catatan' => 'nullable|string'
+    ]);
+
+    return DB::transaction(function () use ($request, $id) {
+        $peminjaman = Peminjaman::findOrFail($id);
+
+        // Update data pengembalian sesuai alur dokumen [cite: 254, 257]
+        $peminjaman->update([
+            'status' => ($request->kondisi_kembali === 'Hilang') ? 'Rusak/Hilang' : 'Selesai',
+            'tgl_kembali_aktual' => now(),
+            'kondisi_kembali' => $request->kondisi_kembali,
+            'catatan' => $request->catatan
+        ]);
+
+        // Stok otomatis bertambah KECUALI jika barang 'Hilang' [cite: 257]
+        if ($request->kondisi_kembali !== 'Hilang') {
+            $peminjaman->barang->increment('stok_tersedia', $peminjaman->jumlah);
+        }
+
+        return response()->json(['message' => 'Validasi berhasil! Stok telah diperbarui.']);
+    });
+}
 }

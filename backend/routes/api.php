@@ -35,4 +35,7 @@ Route::prefix('v1')->group(function () {
     Route::put('peminjaman/{id}', [PeminjamanController::class, 'update']);
     Route::delete('peminjaman/{id}', [PeminjamanController::class, 'destroy']);
     Route::post('peminjaman/{id}/kembalikan', [PeminjamanController::class, 'kembalikan']);
+    Route::get('peminjaman/{id}', [PeminjamanController::class, 'show']);
+    // Pastiin rutenya pake POST sesuai kodingan Vue lu tadi
+Route::post('pengembalian/{id}/validasi', [PeminjamanController::class, 'validasiKembali']);
 });

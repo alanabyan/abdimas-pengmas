@@ -3,7 +3,7 @@
     <div class="flex justify-between items-center mb-6">
       <div>
         <h1 class="text-2xl font-bold text-emerald-900">Daftar Peminjaman Barang</h1>
-        <p class="text-sm text-emerald-700">Manajemen inventaris masjid aktif</p>
+        <p class="text-sm text-emerald-700">Manajemen inventaris masjid aktif — SIMBA v2.0</p>
       </div>
       <router-link 
         to="/peminjaman/tambah"
@@ -19,7 +19,7 @@
           <tr>
             <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase">Peminjam</th>
             <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase">Barang</th>
-            <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase text-center">Jumlah</th>
+            <th class="px-6 py-4 text-center text-xs font-bold text-white uppercase text-center">Jumlah</th>
             <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase">Tgl Pinjam</th>
             <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase">Status</th>
             <th class="px-6 py-4 text-center text-xs font-bold text-white uppercase">Aksi</th>
@@ -37,20 +37,20 @@
             <td class="px-6 py-4">{{ p.tgl_pinjam }}</td>
             <td class="px-6 py-4">
               <span 
-                :class="p.status === 'Kembali' ? 'bg-green-100 text-green-800 border-green-200' : 'bg-yellow-100 text-yellow-800 border-yellow-200'"
+                :class="getStatusClass(p.status)"
                 class="px-2.5 py-0.5 rounded-full text-xs font-medium border"
               >
-                {{ p.status === 'Kembali' ? 'Sudah Kembali' : 'Sedang Dipinjam' }}
+                {{ p.status }}
               </span>
             </td>
             <td class="px-6 py-4 text-center">
-              <button 
-                v-if="p.status !== 'Kembali'"
-                @click="kembalikanBarang(p.id)"
+              <router-link 
+                v-if="['Aktif', 'Terlambat', 'Pinjam'].includes(p.status)"
+                :to="`/peminjaman/${p.id}/validasi`"
                 class="text-amber-600 hover:text-amber-800 font-semibold mr-3 underline"
               >
-                Kembalikan
-              </button>
+                Validasi Kembali
+              </router-link>
               
               <button 
                 @click="hapusPinjaman(p.id)"
@@ -78,7 +78,21 @@ import axios from 'axios'
 
 const listPeminjaman = ref([])
 
-// 1. Ambil Data
+/**
+ * Styling Badge berdasarkan Enum Dokumen Alan 
+ * 'Aktif', 'Selesai', 'Terlambat', 'Batal', 'Rusak/Hilang'
+ */
+const getStatusClass = (status) => {
+  switch (status) {
+    case 'Selesai': return 'bg-green-100 text-green-800 border-green-200'
+    case 'Aktif': 
+    case 'Pinjam': return 'bg-blue-100 text-blue-800 border-blue-200'
+    case 'Terlambat': return 'bg-red-100 text-red-800 border-red-200'
+    case 'Rusak/Hilang': return 'bg-gray-100 text-gray-800 border-gray-200'
+    default: return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+  }
+}
+
 const getPeminjaman = async () => {
   try {
     const response = await axios.get('http://localhost:8000/api/v1/peminjaman')
@@ -88,22 +102,9 @@ const getPeminjaman = async () => {
   }
 }
 
-// 2. Fungsi Kembalikan Barang
-const kembalikanBarang = async (id) => {
-  if (!confirm('Yakin barang sudah dikembalikan? Stok akan bertambah otomatis.')) return
-  
-  try {
-    const response = await axios.post(`http://localhost:8000/api/v1/peminjaman/${id}/kembalikan`)
-    alert(response.data.message || 'Alhamdulillah! Barang sudah kembali.')
-    getPeminjaman() 
-  } catch (error) {
-    alert('Gagal memproses pengembalian!')
-  }
-}
-
-// 3. Fungsi Hapus Data (Balikin Stok Otomatis handled by Backend)
 const hapusPinjaman = async (id) => {
-  if (!confirm('Yakin mau hapus data ini? Stok bakal balik otomatis lho.')) return
+  // Sesuai alur v2.0: Batalkan peminjaman (stok dikembalikan) [cite: 186]
+  if (!confirm('Yakin mau hapus? Stok bakal balik otomatis (jika status Aktif/Pinjam).')) return
   
   try {
     const response = await axios.delete(`http://localhost:8000/api/v1/peminjaman/${id}`)
@@ -111,7 +112,6 @@ const hapusPinjaman = async (id) => {
     getPeminjaman() 
   } catch (error) {
     alert('Gagal menghapus data!')
-    console.error(error)
   }
 }
 

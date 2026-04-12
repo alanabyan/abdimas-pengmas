@@ -2,16 +2,17 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 
-// Import Komponen Lu
+// Import Komponen
 import DaftarPinjaman from '../views/peminjaman/DaftarPinjaman.vue'
 import TambahPinjaman from '../views/peminjaman/TambahPinjaman.vue'
-
+// Pastikan path ValidasiKembali ini bener ya, Wa!
+const ValidasiKembali = () => import('@/views/pengembalian/ValidasiKembali.vue')
 const Login = () => import('@/views/auth/LoginPage.vue')
 
 const routes = [
   { 
     path: '/', 
-    redirect: '/peminjaman' // Redirect ke peminjaman aja biar langsung kelihatan
+    redirect: '/peminjaman' 
   },
 
   // --- Group Route Login (Punya Alan) ---
@@ -28,7 +29,7 @@ const routes = [
     ],
   },
 
-  // --- Group Route Peminjaman (Punya Lu) ---
+  // --- Group Route Peminjaman (Punya Najwa) ---
   {
     path: '/peminjaman',
     name: 'peminjaman.index',
@@ -40,6 +41,12 @@ const routes = [
     name: 'peminjaman.create',
     component: TambahPinjaman,
     meta: { requiresAuth: true, title: 'Tambah Peminjaman' }
+  },
+  {
+    path: '/peminjaman/:id/validasi',
+    name: 'peminjaman.validasi',
+    component: ValidasiKembali, // Pake variabel yang di-import di atas biar bersih
+    meta: { requiresAuth: true, title: 'Validasi Pengembalian' }
   }
 ]
 
@@ -56,17 +63,17 @@ router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
   if (!auth.isInitialized) await auth.initialize()
 
-  // 1. Kalau butuh login tapi belum login, lempar ke Login
+  // 1. Proteksi Halaman yang butuh Login
   if (to.meta.requiresAuth && !auth.isLoggedIn) {
     return next({ name: 'Login', query: { redirect: to.fullPath } })
   }
 
-  // 2. Kalau sudah login tapi mau buka halaman Login lagi, lempar ke Peminjaman
+  // 2. Cegah User yang sudah Login balik ke halaman Guest (Login Page)
   if (to.meta.guest && auth.isLoggedIn) {
     return next({ name: 'peminjaman.index' })
   }
 
-  // Set Title Halaman
+  // Set Title Browser
   document.title = to.meta.title ? `${to.meta.title} — SIMBA` : 'SIMBA'
   next()
 })
