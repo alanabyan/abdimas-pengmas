@@ -23,47 +23,49 @@ class PeminjamanController extends Controller
 
 
     public function store(Request $request)
-    {
-        // 1. Validasi inputan dari form
-        $request->validate([
-            'barang_id' => 'required|exists:barangs,id',
-            'warga_id' => 'required|exists:wargas,id_warga',
-            'jumlah' => 'required|integer|min:1',
-            'tgl_pinjam' => 'required|date',
-            'tgl_rencana_kembali' => 'required|date|after_or_equal:tgl_pinjam',
+{
+    // 1. Validasi inputan
+    $request->validate([
+        'barang_id' => 'required|exists:barangs,id',
+        'warga_id' => 'required|exists:wargas,id', // Sesuaikan kalau PK warga itu 'id'
+        'jumlah' => 'required|integer|min:1',
+        'tgl_pinjam' => 'required|date',
+        'tgl_rencana_kembali' => 'required|date|after_or_equal:tgl_pinjam',
+    ]);
+
+    // 2. Gunakan Transaction
+    return DB::transaction(function () use ($request) {
+        $barang = Barang::findOrFail($request->barang_id);
+
+        // CEK STOK (Pake 'stok_tersedia' sesuai perbaikan DB kemarin)
+        if ($barang->stok_tersedia < $request->jumlah) {
+            return response()->json([
+                'message' => "Stok {$barang->nama_barang} tidak mencukupi! Sisa: {$barang->stok_tersedia}"
+            ], 422); 
+        }
+
+        // 3. Simpan data peminjaman
+        $peminjaman = Peminjaman::create([
+            'barang_id'          => $request->barang_id,
+            'warga_id'           => $request->warga_id,
+            'marbot_id'          => 1, // Nanti ganti pake auth()->id() kalau udah ada login
+            'keperluan'          => $request->keperluan,
+            'jumlah'             => $request->jumlah,
+            'kondisi_pinjam'     => $request->kondisi_pinjam,
+            'tgl_pinjam'         => $request->tgl_pinjam,
+            'tgl_rencana_kembali' => $request->tgl_rencana_kembali,
+            'status'             => 'Pinjam', // Samain sama yang di DaftarPinjaman.vue tadi
         ]);
 
-        // 2. Gunakan Transaction biar kalau ada error, database nggak berantakan
-        return DB::transaction(function () use ($request) {
-            $barang = Barang::findOrFail($request->barang_id);
+        // 4. POTONG STOK BARANG
+        $barang->decrement('stok_tersedia', $request->jumlah);
 
-            // Cek apakah stok cukup?
-            if ($barang->stok < $request->jumlah) {
-                return response()->json(['message' => 'Stok barang tidak mencukupi!'], 400);
-            }
-
-            // 3. Simpan data peminjaman
-            $peminjaman = Peminjaman::create([
-                'barang_id' => $request->barang_id,
-                'warga_id' => $request->warga_id,
-                'marbot_id' => 1, // Sementara hardcode dulu, nanti pake auth
-                'keperluan' => $request->keperluan,
-                'jumlah' => $request->jumlah,
-                'kondisi_pinjam' => $request->kondisi_pinjam,
-                'tgl_pinjam' => $request->tgl_pinjam,
-                'tgl_rencana_kembali' => $request->tgl_rencana_kembali,
-                'status' => 'Dipinjam',
-            ]);
-
-            // 4. POTONG STOK BARANG (Tugas krusial lu)
-            $barang->decrement('stok', $request->jumlah);
-
-            return response()->json([
-                'message' => 'Peminjaman berhasil dicatat!',
-                'data' => $peminjaman
-            ], 201);
-        });
-    }
+        return response()->json([
+            'message' => 'Alhamdulillah! Peminjaman berhasil dicatat.',
+            'data' => $peminjaman
+        ], 201);
+    });
+}
 
     public function kembali(Request $request, $id)
     {

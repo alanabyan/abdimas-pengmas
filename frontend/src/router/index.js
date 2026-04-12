@@ -1,7 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AuthLayout from '@/layouts/AuthLayout.vue'
+
+// 1. Pastiin ini di-import (Cek path-nya bener ga di folder views/peminjaman)
 import DaftarPinjaman from '../views/peminjaman/DaftarPinjaman.vue'
+import TambahPinjaman from '../views/peminjaman/TambahPinjaman.vue'
 
 const Login = () => import('@/views/auth/LoginPage.vue')
 
@@ -13,7 +16,7 @@ const routes = [
     path: '/',
     component: AuthLayout,
     children: [
-      { path: 'login', name: 'Login', component: Login, meta: { guest: true } },
+      { path: 'login', name: 'Login', component: Login, meta: { guest: true, title: 'Login' } },
     ],
   },
 
@@ -21,7 +24,16 @@ const routes = [
   {
     path: '/peminjaman',
     name: 'peminjaman.index',
-    component: DaftarPinjaman
+    component: DaftarPinjaman,
+    meta: { requiresAuth: true, title: 'Daftar Peminjaman' }
+  },
+  
+  // 2. TAMBAHIN INI BIAR HALAMAN TAMBAH MUNCUL
+  {
+    path: '/peminjaman/tambah',
+    name: 'peminjaman.create',
+    component: TambahPinjaman,
+    meta: { requiresAuth: true, title: 'Tambah Peminjaman' }
   }
 ]
 
@@ -38,11 +50,15 @@ router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
   if (!auth.isInitialized) await auth.initialize()
 
+  // Jika butuh login tapi belum login
   if (to.meta.requiresAuth && !auth.isLoggedIn) {
     return next({ name: 'Login', query: { redirect: to.fullPath } })
   }
+  
+  // Jika sudah login tapi mau ke halaman guest (seperti login page)
   if (to.meta.guest && auth.isLoggedIn) {
-    return next({ name: 'Dashboard' })
+    // Pastiin rute 'Dashboard' lu emang ada ya, kalau nggak ada ganti ke '/'
+    return next({ path: '/peminjaman' }) 
   }
 
   document.title = to.meta.title ? `${to.meta.title} — SIMBA` : 'SIMBA'
