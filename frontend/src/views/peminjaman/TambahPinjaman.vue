@@ -124,12 +124,19 @@ onMounted(() => {
 const simpanData = async () => {
   try {
     const payload = { ...form.value, marbot_id: 1 }
-    await axios.post('http://127.0.0.1:8000/api/v1/peminjaman', payload)
-    alert('Alhamdulillah! Berhasil!')
+    // Kirim data ke backend
+    const response = await axios.post('http://127.0.0.1:8000/api/v1/peminjaman', payload)
+    
+    alert(response.data.message || 'Alhamdulillah! Berhasil!')
     router.push('/peminjaman')
   } catch (error) {
-    alert('Gagal nyimpen data!')
-    console.error(error.response?.data)
+    // Cek kalau ada error dari Laravel (misal stok kurang atau validasi gagal)
+    if (error.response && error.response.data.message) {
+      alert('Gagal: ' + error.response.data.message)
+    } else {
+      alert('Aduh, ada masalah koneksi ke server, Wa!')
+    }
+    console.error("Detail Error:", error.response?.data)
   }
 }
 </script>
