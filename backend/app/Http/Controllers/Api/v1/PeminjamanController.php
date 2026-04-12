@@ -156,21 +156,22 @@ class PeminjamanController extends Controller
      * Hapus Peminjaman (Stok balik kalau status belum 'Kembali')
      */
     public function destroy($id)
-    {
-        return DB::transaction(function () use ($id) {
-            $peminjaman = Peminjaman::findOrFail($id);
+{
+    return DB::transaction(function () use ($id) {
+        $peminjaman = Peminjaman::findOrFail($id);
 
-            if ($peminjaman->status !== 'Kembali') {
-                $barang = Barang::findOrFail($peminjaman->barang_id);
+        // Kalau statusnya masih 'Pinjam', balikin dulu stoknya sebelum dihapus
+        if ($peminjaman->status === 'Pinjam') {
+            $barang = $peminjaman->barang;
+            if ($barang) {
                 $barang->increment('stok_tersedia', $peminjaman->jumlah);
             }
+        }
 
-            $peminjaman->delete();
+        $peminjaman->delete();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil dihapus dan stok disesuaikan!'
-            ]);
-        });
-    }
+        return response()->json(['message' => 'Data peminjaman berhasil dihapus dan stok diperbarui!']);
+    });
+}
+
 }

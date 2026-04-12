@@ -82,35 +82,33 @@ const listPeminjaman = ref([])
 const getPeminjaman = async () => {
   try {
     const response = await axios.get('http://localhost:8000/api/v1/peminjaman')
-    // Biasanya data dari Laravel dibungkus dalam .data atau .data.data
     listPeminjaman.value = response.data.data || response.data
   } catch (error) {
     console.error("Gagal narik data:", error)
   }
 }
 
-// 2. Fungsi Kembalikan Barang (Update Stok Otomatis)
+// 2. Fungsi Kembalikan Barang
 const kembalikanBarang = async (id) => {
   if (!confirm('Yakin barang sudah dikembalikan? Stok akan bertambah otomatis.')) return
   
   try {
-    await axios.post(`http://localhost:8000/api/v1/peminjaman/${id}/kembalikan`)
-    alert('Alhamdulillah! Barang sudah kembali.')
-    getPeminjaman() // Refresh tabel
+    const response = await axios.post(`http://localhost:8000/api/v1/peminjaman/${id}/kembalikan`)
+    alert(response.data.message || 'Alhamdulillah! Barang sudah kembali.')
+    getPeminjaman() 
   } catch (error) {
     alert('Gagal memproses pengembalian!')
-    console.error(error)
   }
 }
 
-// 3. Fungsi Hapus Data
+// 3. Fungsi Hapus Data (Balikin Stok Otomatis handled by Backend)
 const hapusPinjaman = async (id) => {
-  if (!confirm('Yakin ingin menghapus data ini secara permanen?')) return
+  if (!confirm('Yakin mau hapus data ini? Stok bakal balik otomatis lho.')) return
   
   try {
-    await axios.delete(`http://localhost:8000/api/v1/peminjaman/${id}`)
-    alert('Data berhasil dihapus!')
-    getPeminjaman() // Refresh tabel
+    const response = await axios.delete(`http://localhost:8000/api/v1/peminjaman/${id}`)
+    alert(response.data.message || 'Data berhasil dihapus!')
+    getPeminjaman() 
   } catch (error) {
     alert('Gagal menghapus data!')
     console.error(error)
