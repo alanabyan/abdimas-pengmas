@@ -23,4 +23,5 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('peminjaman', PeminjamanController::class);
     Route::put('peminjaman/{id}', [PeminjamanController::class, 'update']);
     Route::delete('peminjaman/{id}', [PeminjamanController::class, 'destroy']);
+    Route::post('peminjaman/{id}/kembalikan', [PeminjamanController::class, 'kembalikan']);
 });

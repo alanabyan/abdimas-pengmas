@@ -172,4 +172,37 @@ public function destroy($id)
         ]);
     });
 }
+
+public function kembalikan($id)
+{
+    // Cari data peminjaman beserta data barangnya sekalian (Eager Loading)
+    $peminjaman = Peminjaman::with('barang')->find($id);
+
+    if (!$peminjaman) {
+        return response()->json(['message' => 'Data tidak ditemukan!'], 404);
+    }
+
+    if ($peminjaman->status === 'Kembali') {
+        return response()->json(['message' => 'Barang sudah dikembalikan sebelumnya.'], 400);
+    }
+
+    // 1. Update status
+    $peminjaman->update([
+        'status' => 'Kembali',
+        'tgl_kembali' => now()->toDateString()
+    ]);
+
+    // 2. Cek apakah relasi barang ada sebelum nambahin stok
+    if ($peminjaman->barang) {
+        $peminjaman->barang->increment('stok_tersedia', $peminjaman->jumlah);
+    } else {
+        return response()->json(['message' => 'Data barang tidak ditemukan, stok gagal diupdate.'], 422);
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Alhamdulillah! Barang berhasil dikembalikan.',
+        'data' => $peminjaman
+    ]);
+}
 }
