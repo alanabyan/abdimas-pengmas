@@ -31,7 +31,7 @@ class Peminjaman extends Model
 
     public function barang()
     {
-        return $this->belongsTo(Barang::class);
+        return $this->belongsTo(Barang::class, 'barang_id');
     }
 
     public function warga()
