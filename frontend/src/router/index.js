@@ -34,7 +34,7 @@ const routes = [
     ],
   },
 
-  // --- Group Route Peminjaman (Punya Najwa) ---
+  // --- Group Route Peminjaman  ---
   {
     path: '/',
     component: AppLayout,
@@ -81,6 +81,13 @@ const routes = [
         name: 'peminjaman.validasi',
         component: ValidasiKembali,
         meta: { title: 'Validasi Pengembalian' }
+      },
+
+      {
+        path: '/dashboard',
+        name: 'Dashboard',
+        component: () => import('../views/dashboard/Dashboard.vue'), // Cek folder dashboard-nya
+        meta: { requiresAuth: true, title: 'Dashboard' }
       }
     ]
   }

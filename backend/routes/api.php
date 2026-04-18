@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\v1\PeminjamanController;
 use App\Http\Controllers\Api\v1\WargaController;
 use App\Http\Controllers\Api\v1\BarangController;
 use App\Http\Controllers\Api\v1\NotifikasiController;
+use App\Http\Controllers\Api\v1\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,5 +51,7 @@ Route::prefix('v1')->group(function () {
     Route::post('peminjaman/{id}/kembalikan', [PeminjamanController::class, 'kembalikan']);
     Route::get('peminjaman/{id}', [PeminjamanController::class, 'show']);
     // Pastiin rutenya pake POST sesuai kodingan Vue lu tadi
-Route::post('pengembalian/{id}/validasi', [PeminjamanController::class, 'validasiKembali']);
+    Route::post('pengembalian/{id}/validasi', [PeminjamanController::class, 'validasiKembali']);
+    Route::get('dashboard/statistik', [DashboardController::class, 'index']);
+    Route::get('dashboard/grafik', [DashboardController::class, 'getGrafik']);
 });
