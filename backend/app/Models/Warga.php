@@ -36,7 +36,7 @@ class Warga extends Model
     public function scopeCari($query, string $keyword)
     {
         return $query->where(function ($q) use ($keyword) {
-            $q->where('nama', 'like', "%{$keyword}%")
+            $q->where('nama_warga', 'like', "%{$keyword}%")
                 ->orWhere('no_hp', 'like', "%{$keyword}%")
                 ->orWhere('alamat', 'like', "%{$keyword}%")
                 ->orWhere('rt_rw', 'like', "%{$keyword}%");

@@ -1,18 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AuthLayout from '@/layouts/AuthLayout.vue'
+import AppLayout from '@/layouts/AppLayout.vue'
 
 // Import Komponen
 import DaftarPinjaman from '../views/peminjaman/DaftarPinjaman.vue'
 import TambahPinjaman from '../views/peminjaman/TambahPinjaman.vue'
+import DaftarWarga from '@/views/warga/DaftarWarga.vue'
+import TambahWarga from '@/views/warga/TambahWarga.vue'
+import EditWarga from '@/views/warga/EditWarga.vue'
+import DetailWarga from '@/views/warga/DetailWarga.vue'
 // Pastikan path ValidasiKembali ini bener ya, Wa!
 const ValidasiKembali = () => import('@/views/pengembalian/ValidasiKembali.vue')
 const Login = () => import('@/views/auth/LoginPage.vue')
 
 const routes = [
-  { 
-    path: '/', 
-    redirect: '/peminjaman' 
+  {
+    path: '/',
+    redirect: '/peminjaman'
   },
 
   // --- Group Route Login (Punya Alan) ---
@@ -20,33 +25,64 @@ const routes = [
     path: '/',
     component: AuthLayout,
     children: [
-      { 
-        path: 'login', 
-        name: 'Login', 
-        component: Login, 
-        meta: { guest: true, title: 'Login' } 
+      {
+        path: 'login',
+        name: 'Login',
+        component: Login,
+        meta: { guest: true, title: 'Login' }
       },
     ],
   },
 
   // --- Group Route Peminjaman (Punya Najwa) ---
   {
-    path: '/peminjaman',
-    name: 'peminjaman.index',
-    component: DaftarPinjaman,
-    meta: { requiresAuth: true, title: 'Daftar Peminjaman' }
-  },
-  {
-    path: '/peminjaman/tambah',
-    name: 'peminjaman.create',
-    component: TambahPinjaman,
-    meta: { requiresAuth: true, title: 'Tambah Peminjaman' }
-  },
-  {
-    path: '/peminjaman/:id/validasi',
-    name: 'peminjaman.validasi',
-    component: ValidasiKembali, // Pake variabel yang di-import di atas biar bersih
-    meta: { requiresAuth: true, title: 'Validasi Pengembalian' }
+    path: '/',
+    component: AppLayout,
+    meta: { requiresAuth: true },
+    children: [
+      { 
+        path: 'warga',
+        name: 'DaftarWarga', 
+        component: DaftarWarga, 
+        meta: { title: 'Data Warga' }
+      },
+      {
+        path: '/warga/tambah',
+        name: 'TambahWarga',
+        component: TambahWarga,
+        meta: { title: 'Tambah Warga' }
+      },
+      {
+        path: '/warga/:id/edit',
+        name: 'EditWarga',
+        component: EditWarga,
+        meta: { title: 'Edit Warga' }
+      },
+      {
+        path: '/warga/:id',
+        name: 'DetailWarga',
+        component: DetailWarga,
+        meta: { title: 'Detail Warga' }
+      },
+      {
+        path: 'peminjaman',
+        name: 'peminjaman.index',
+        component: DaftarPinjaman,
+        meta: { title: 'Daftar Peminjaman' }
+      },
+      {
+        path: 'peminjaman/tambah',
+        name: 'peminjaman.create',
+        component: TambahPinjaman,
+        meta: { title: 'Tambah Peminjaman' }
+      },
+      {
+        path: 'peminjaman/:id/validasi',
+        name: 'peminjaman.validasi',
+        component: ValidasiKembali,
+        meta: { title: 'Validasi Pengembalian' }
+      }
+    ]
   }
 ]
 

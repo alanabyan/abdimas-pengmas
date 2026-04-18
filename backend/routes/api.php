@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\v1\PeminjamanController;
 use App\Http\Controllers\Api\v1\WargaController;
 use App\Http\Controllers\Api\v1\BarangController;
+use App\Http\Controllers\Api\v1\NotifikasiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,6 +25,18 @@ Route::prefix('v1')->group(function () {
         // POST /api/v1/auth/login
         Route::post('login', [AuthController::class, 'login']);
     });
+
+    Route::get('warga/search', [WargaController::class, 'search']);
+    Route::get('warga/{warga}/riwayat', [WargaController::class, 'riwayatPeminjaman']);
+
+    // GET /api/v1/notifikasi
+    Route::get('notifikasi', [NotifikasiController::class, 'index']);
+
+    // PATCH /api/v1/notifikasi/{notifikasi}/baca
+    Route::patch('notifikasi/{notifikasi}/baca', [NotifikasiController::class, 'tandaiBaca']);
+
+    // DELETE /api/v1/notifikasi/{notifikasi}
+    Route::delete('notifikasi/{notifikasi}', [NotifikasiController::class, 'destroy']);
 
     // --- Fitur Peminjaman, Warga, & Barang (Punya Lu) ---
     // apiResource udah otomatis nanganin GET (index/show), POST (store), dll.

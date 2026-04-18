@@ -44,7 +44,7 @@ class Peminjaman extends Model
 
     public function marbot()
     {
-        return $this->belongsTo(User::class, 'marbot_id');
+        return $this->belongsTo(Marbot::class, 'marbot_id');
     }
 
     protected $casts = [
