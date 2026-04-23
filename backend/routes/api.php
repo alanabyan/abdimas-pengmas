@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\v1\WargaController;
 use App\Http\Controllers\Api\v1\BarangController;
 use App\Http\Controllers\Api\v1\NotifikasiController;
 use App\Http\Controllers\Api\v1\DashboardController;
+use App\Http\Controllers\Api\v1\LaporanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +33,15 @@ Route::prefix('v1')->group(function () {
 
     // GET /api/v1/notifikasi
     Route::get('notifikasi', [NotifikasiController::class, 'index']);
+
+    // GET api buat laporan
+    Route::get('laporan/peminjaman', [LaporanController::class, 'peminjaman']);
+    Route::get('laporan/kerusakan', [LaporanController::class, 'kerusakan']);
+    Route::get('laporan/stok', [LaporanController::class, 'stok']);
+
+    // buat ekspor pdf
+    Route::get('laporan/peminjaman/pdf', [LaporanController::class, 'peminjamanPdf']);
+
 
     // PATCH /api/v1/notifikasi/{notifikasi}/baca
     Route::patch('notifikasi/{notifikasi}/baca', [NotifikasiController::class, 'tandaiBaca']);

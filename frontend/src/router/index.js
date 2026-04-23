@@ -10,6 +10,10 @@ import DaftarWarga from '@/views/warga/DaftarWarga.vue'
 import TambahWarga from '@/views/warga/TambahWarga.vue'
 import EditWarga from '@/views/warga/EditWarga.vue'
 import DetailWarga from '@/views/warga/DetailWarga.vue'
+import MenuLaporan from '@/views/laporan/MenuLaporan.vue'
+import LaporanPeminjaman from '@/views/laporan/LaporanPeminjaman.vue'
+import LaporanKerusakan from '@/views/laporan/LaporanKerusakan.vue'
+import LaporanStok from '@/views/laporan/LaporanStok.vue'
 // Pastikan path ValidasiKembali ini bener ya, Wa!
 const ValidasiKembali = () => import('@/views/pengembalian/ValidasiKembali.vue')
 const Login = () => import('@/views/auth/LoginPage.vue')
@@ -87,8 +91,32 @@ const routes = [
         path: '/dashboard',
         name: 'Dashboard',
         component: () => import('../views/dashboard/Dashboard.vue'), // Cek folder dashboard-nya
-        meta: { requiresAuth: true, title: 'Dashboard' }
-      }
+        meta: { title: 'Dashboard' }
+      },
+      {
+        path: "/laporan",
+        name: 'Rekap Laporan',
+        component: MenuLaporan,
+        meta: {title: 'Rekap Laporan'}
+      },
+      {
+        path: "/laporan/peminjaman",
+        name: 'Laporan Peminjaman',
+        component: LaporanPeminjaman,
+        meta: {title: 'Laporan Peminjaman'}
+      },
+      {
+        path: "/laporan/kerusakan",
+        name: 'Laporan Kerusakan',
+        component: LaporanKerusakan,
+        meta: {title: 'Laporan Kerusakan'}
+      },
+      {
+        path: "/laporan/stok",
+        name: 'Laporan Stok Barang',
+        component: LaporanStok,
+        meta: {title: 'Laporan Stok Barang'}
+      },
     ]
   }
 ]
