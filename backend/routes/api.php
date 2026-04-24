@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\v1\KategoriController;
 use App\Http\Controllers\Api\v1\PeminjamanController;
 use App\Http\Controllers\Api\v1\WargaController;
 use App\Http\Controllers\Api\v1\BarangController;
@@ -42,6 +43,12 @@ Route::prefix('v1')->group(function () {
     // buat ekspor pdf
     Route::get('laporan/peminjaman/pdf', [LaporanController::class, 'peminjamanPdf']);
 
+    // POST /api/v1/barang/{barang}/foto
+    Route::post('barang/{barang}/foto', [BarangController::class, 'uploadFoto']);
+
+    // DELETE /api/v1/barang/{barang}/foto
+    Route::delete('barang/{barang}/foto', [BarangController::class, 'hapusFoto']);
+
 
     // PATCH /api/v1/notifikasi/{notifikasi}/baca
     Route::patch('notifikasi/{notifikasi}/baca', [NotifikasiController::class, 'tandaiBaca']);
@@ -54,6 +61,7 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('peminjaman', PeminjamanController::class);
     Route::apiResource('warga', WargaController::class);
     Route::apiResource('barang', BarangController::class);
+    Route::apiResource('kategori', KategoriController::class);
 
     // Tambahan rute manual (kalau dibutuhin spesifik)
     Route::put('peminjaman/{id}', [PeminjamanController::class, 'update']);

@@ -14,6 +14,11 @@ import MenuLaporan from '@/views/laporan/MenuLaporan.vue'
 import LaporanPeminjaman from '@/views/laporan/LaporanPeminjaman.vue'
 import LaporanKerusakan from '@/views/laporan/LaporanKerusakan.vue'
 import LaporanStok from '@/views/laporan/LaporanStok.vue'
+import DaftarBarang from '@/views/barang/DaftarBarang.vue'
+import TambahBarang from '@/views/barang/TambahBarang.vue'
+import EditBarang from '@/views/barang/EditBarang.vue'
+import DaftarKategori from '@/views/kategori/DaftarKategori.vue'
+import TambahKategori from '@/views/kategori/TambahKategori.vue'
 // Pastikan path ValidasiKembali ini bener ya, Wa!
 const ValidasiKembali = () => import('@/views/pengembalian/ValidasiKembali.vue')
 const Login = () => import('@/views/auth/LoginPage.vue')
@@ -117,6 +122,54 @@ const routes = [
         component: LaporanStok,
         meta: {title: 'Laporan Stok Barang'}
       },
+      {
+        path: '/barang',
+        name: 'Daftar Barang',
+        component: DaftarBarang,
+        meta: {
+          title: 'Daftar Barang',
+        }
+      },
+      {
+        path: '/barang/tambah',
+        name: 'Tambah Barang',
+        component: TambahBarang,
+        meta: {
+          title: 'Tambah Barang',
+        }
+      },
+      {
+        path: '/barang/:id/edit',
+        name: 'Edit Barang',
+        component: EditBarang,
+        meta: {
+          title: 'Edit Barang',
+        }
+      },
+      {
+        path: '/kategori',
+        name: 'Daftar Kategori',
+        component: DaftarKategori,
+        meta: {
+          title: 'Daftar Kategori',
+        }
+      },
+      {
+        path: '/kategori/tambah',
+        name: 'Tambah Kategori',
+        component: TambahKategori,
+        meta: {
+          title: 'Tambah Kategori',
+        }
+      },
+      // {
+      //   path: '/kategori/:id/edit',
+      //   name: 'Edit Kategori',
+      //   component: EditKategori,
+      //   meta: {
+      //     title: 'Edit Kategori',
+      //   }
+      // },
     ]
   }
 ]
