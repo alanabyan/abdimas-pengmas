@@ -10,6 +10,15 @@ import DaftarWarga from '@/views/warga/DaftarWarga.vue'
 import TambahWarga from '@/views/warga/TambahWarga.vue'
 import EditWarga from '@/views/warga/EditWarga.vue'
 import DetailWarga from '@/views/warga/DetailWarga.vue'
+import MenuLaporan from '@/views/laporan/MenuLaporan.vue'
+import LaporanPeminjaman from '@/views/laporan/LaporanPeminjaman.vue'
+import LaporanKerusakan from '@/views/laporan/LaporanKerusakan.vue'
+import LaporanStok from '@/views/laporan/LaporanStok.vue'
+import DaftarBarang from '@/views/barang/DaftarBarang.vue'
+import TambahBarang from '@/views/barang/TambahBarang.vue'
+import EditBarang from '@/views/barang/EditBarang.vue'
+import DaftarKategori from '@/views/kategori/DaftarKategori.vue'
+import TambahKategori from '@/views/kategori/TambahKategori.vue'
 // Pastikan path ValidasiKembali ini bener ya, Wa!
 const ValidasiKembali = () => import('@/views/pengembalian/ValidasiKembali.vue')
 const Login = () => import('@/views/auth/LoginPage.vue')
@@ -87,8 +96,80 @@ const routes = [
         path: '/dashboard',
         name: 'Dashboard',
         component: () => import('../views/dashboard/Dashboard.vue'), // Cek folder dashboard-nya
-        meta: { requiresAuth: true, title: 'Dashboard' }
-      }
+        meta: { title: 'Dashboard' }
+      },
+      {
+        path: "/laporan",
+        name: 'Rekap Laporan',
+        component: MenuLaporan,
+        meta: {title: 'Rekap Laporan'}
+      },
+      {
+        path: "/laporan/peminjaman",
+        name: 'Laporan Peminjaman',
+        component: LaporanPeminjaman,
+        meta: {title: 'Laporan Peminjaman'}
+      },
+      {
+        path: "/laporan/kerusakan",
+        name: 'Laporan Kerusakan',
+        component: LaporanKerusakan,
+        meta: {title: 'Laporan Kerusakan'}
+      },
+      {
+        path: "/laporan/stok",
+        name: 'Laporan Stok Barang',
+        component: LaporanStok,
+        meta: {title: 'Laporan Stok Barang'}
+      },
+      {
+        path: '/barang',
+        name: 'Daftar Barang',
+        component: DaftarBarang,
+        meta: {
+          title: 'Daftar Barang',
+        }
+      },
+      {
+        path: '/barang/tambah',
+        name: 'Tambah Barang',
+        component: TambahBarang,
+        meta: {
+          title: 'Tambah Barang',
+        }
+      },
+      {
+        path: '/barang/:id/edit',
+        name: 'Edit Barang',
+        component: EditBarang,
+        meta: {
+          title: 'Edit Barang',
+        }
+      },
+      {
+        path: '/kategori',
+        name: 'Daftar Kategori',
+        component: DaftarKategori,
+        meta: {
+          title: 'Daftar Kategori',
+        }
+      },
+      {
+        path: '/kategori/tambah',
+        name: 'Tambah Kategori',
+        component: TambahKategori,
+        meta: {
+          title: 'Tambah Kategori',
+        }
+      },
+      // {
+      //   path: '/kategori/:id/edit',
+      //   name: 'Edit Kategori',
+      //   component: EditKategori,
+      //   meta: {
+      //     title: 'Edit Kategori',
+      //   }
+      // },
     ]
   }
 ]

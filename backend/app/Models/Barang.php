@@ -10,10 +10,11 @@ class Barang extends Model
     use HasFactory;
 
     protected $table = 'barangs';
+    protected $appends = ['stok_dipinjam', 'tersedia'];
 
     protected $fillable = [
         'kategori_id',
-        'nama',
+        'nama_barang',
         'deskripsi',
         'stok_total',
         'stok_tersedia',
@@ -65,7 +66,7 @@ class Barang extends Model
     public function scopeCari($query, string $keyword)
     {
         return $query->where(function ($q) use ($keyword) {
-            $q->where('nama', 'like', "%{$keyword}%")
+            $q->where('nama_barang', 'like', "%{$keyword}%")
                 ->orWhere('deskripsi', 'like', "%{$keyword}%")
                 ->orWhere('lokasi', 'like', "%{$keyword}%");
         });
