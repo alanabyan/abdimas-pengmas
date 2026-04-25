@@ -10,7 +10,8 @@ use App\Http\Controllers\Api\v1\BarangController;
 use App\Http\Controllers\Api\v1\NotifikasiController;
 use App\Http\Controllers\Api\v1\DashboardController;
 use App\Http\Controllers\Api\v1\LaporanController;
-
+use App\Http\Controllers\Api\v1\PengembalianController;
+use App\Http\Controllers\Api\v1\MarbotController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -23,53 +24,47 @@ Route::get('/user', function (Request $request) {
 
 Route::prefix('v1')->group(function () {
 
-    // --- Fitur Auth (Punya Alan) ---
+    // --- Fitur Auth ---
     Route::prefix('auth')->group(function () {
-        // POST /api/v1/auth/login
         Route::post('login', [AuthController::class, 'login']);
     });
 
+    // --- Fitur Warga & Notifikasi ---
     Route::get('warga/search', [WargaController::class, 'search']);
     Route::get('warga/{warga}/riwayat', [WargaController::class, 'riwayatPeminjaman']);
-
-    // GET /api/v1/notifikasi
     Route::get('notifikasi', [NotifikasiController::class, 'index']);
+    Route::patch('notifikasi/{notifikasi}/baca', [NotifikasiController::class, 'tandaiBaca']);
+    Route::delete('notifikasi/{notifikasi}', [NotifikasiController::class, 'destroy']);
 
-    // GET api buat laporan
+    // --- Fitur Laporan (Udah OK) ---
     Route::get('laporan/peminjaman', [LaporanController::class, 'peminjaman']);
     Route::get('laporan/kerusakan', [LaporanController::class, 'kerusakan']);
     Route::get('laporan/stok', [LaporanController::class, 'stok']);
-
-    // buat ekspor pdf
     Route::get('laporan/peminjaman/pdf', [LaporanController::class, 'peminjamanPdf']);
+    Route::get('laporan/kerusakan/pdf', [LaporanController::class, 'kerusakanPdf']); // Tambahin ini buat PDF kerusakan
+    Route::get('laporan/tren-peminjaman', [LaporanController::class, 'trenPeminjaman']);
 
-    // POST /api/v1/barang/{barang}/foto
+    // --- Fitur Barang ---
     Route::post('barang/{barang}/foto', [BarangController::class, 'uploadFoto']);
-
-    // DELETE /api/v1/barang/{barang}/foto
     Route::delete('barang/{barang}/foto', [BarangController::class, 'hapusFoto']);
 
+    // --- Fitur Dashboard ---
+    Route::get('dashboard/statistik', [DashboardController::class, 'index']);
+    Route::get('dashboard/grafik', [DashboardController::class, 'getGrafik']);
 
-    // PATCH /api/v1/notifikasi/{notifikasi}/baca
-    Route::patch('notifikasi/{notifikasi}/baca', [NotifikasiController::class, 'tandaiBaca']);
-
-    // DELETE /api/v1/notifikasi/{notifikasi}
-    Route::delete('notifikasi/{notifikasi}', [NotifikasiController::class, 'destroy']);
-
-    // --- Fitur Peminjaman, Warga, & Barang (Punya Lu) ---
-    // apiResource udah otomatis nanganin GET (index/show), POST (store), dll.
+    // --- Fitur CRUD Utama ---
     Route::apiResource('peminjaman', PeminjamanController::class);
     Route::apiResource('warga', WargaController::class);
     Route::apiResource('barang', BarangController::class);
     Route::apiResource('kategori', KategoriController::class);
 
-    // Tambahan rute manual (kalau dibutuhin spesifik)
-    Route::put('peminjaman/{id}', [PeminjamanController::class, 'update']);
-    Route::delete('peminjaman/{id}', [PeminjamanController::class, 'destroy']);
-    Route::post('peminjaman/{id}/kembalikan', [PeminjamanController::class, 'kembalikan']);
-    Route::get('peminjaman/{id}', [PeminjamanController::class, 'show']);
-    // Pastiin rutenya pake POST sesuai kodingan Vue lu tadi
-    Route::post('pengembalian/{id}/validasi', [PeminjamanController::class, 'validasiKembali']);
-    Route::get('dashboard/statistik', [DashboardController::class, 'index']);
-    Route::get('dashboard/grafik', [DashboardController::class, 'getGrafik']);
+    // --- 2. FITUR PENGEMBALIAN (Jalur Baru) ---
+    // GET: /api/v1/pengembalian -> Menampilkan barang yang bisa dikembalikan
+    Route::get('pengembalian', [PengembalianController::class, 'index']);
+    // POST: /api/v1/pengembalian/{id} -> Proses simpan pengembalian
+    Route::post('pengembalian/{id}', [PengembalianController::class, 'store']);
+
+    //update data marbot
+    Route::put('marbot/profile/update', [MarbotController::class, 'updateProfile']);
+    Route::get('marbot/{marbot}', [MarbotController::class, 'show']);
 });

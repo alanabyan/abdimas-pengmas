@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Akun Marbot (Punya Alan, digabung sama punya lu)
+        // 1. Akun Marbot 
         $marbot = Marbot::create([
             'nama_marbot' => 'Marbot Utama',
             'email'       => 'marbot@masjid.com',
@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             'aktif'       => true,
         ]);
 
-        // 2. Kategori Default (Punya Alan)
+        // 2. Kategori Default 
         $kategoris = [
             ['nama' => 'Elektronik',          'ikon' => 'plug',          'deskripsi' => 'Peralatan elektronik masjid'],
             ['nama' => 'Kebersihan',          'ikon' => 'bucket',        'deskripsi' => 'Alat dan perlengkapan kebersihan'],
@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
             Kategori::create($k);
         }
 
-        // 3. Warga (Punya Lu)
+        // 3. Warga
         $wargaId = DB::table('wargas')->insertGetId([
             'nama_warga' => 'Budi Santoso', 
             'alamat' => 'RT 01 RW 02',
@@ -44,14 +44,14 @@ class DatabaseSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        // 4. Kategori Tambahan buat tes Peminjaman (Punya Lu)
+        // 4. Kategori Tambahan buat tes Peminjaman
         $kategoriPestaId = DB::table('kategoris')->insertGetId([
             'nama' => 'Alat Pesta',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // 5. Barang (Punya Lu)
+        // 5. Barang
         $barangId = DB::table('barangs')->insertGetId([
             'kategori_id' => $kategoriPestaId,
             'nama_barang' => 'Tenda Dome',
@@ -64,7 +64,7 @@ class DatabaseSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        // 6. Peminjaman (Punya Lu)
+        // 6. Peminjaman 
         DB::table('peminjamans')->insert([
             'barang_id' => $barangId,
             'warga_id' => $wargaId,

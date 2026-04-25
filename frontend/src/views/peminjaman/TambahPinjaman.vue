@@ -21,27 +21,43 @@
               </option>
             </select>
           </div>
-          
+
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Barang</label>
-            <select v-model="form.barang_id" required
-              class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-gray-50">
-              <option value="" disabled>-- Pilih Barang --</option>
-              <option v-for="b in daftarBarang" :key="b.id" :value="b.id">
-                {{ b.nama_barang }} (Tersedia: {{ b.stok_tersedia }})
+            <label class="block text-sm font-medium text-emerald-700 mb-2">Filter Berdasarkan Kategori</label>
+            <select v-model="selectedKategori" @change="onKategoriChange"
+              class="w-full border border-emerald-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-emerald-50 font-medium text-left">
+              <option value="">-- Semua Kategori --</option>
+              <option v-for="k in daftarKategori" :key="k.id" :value="k.id">
+                {{ k.nama_kategori || k.nama }}
               </option>
             </select>
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="md:col-span-2 text-left">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Barang</label>
+            <select v-model="form.barang_id" required
+              class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-gray-50 text-left">
+              <option value="" disabled>-- Pilih Barang --</option>
+              <option v-for="b in daftarBarangTerfilter" :key="b.id" :value="b.id">
+                {{ b.nama_barang }} - (Stok: {{ b.stok_tersedia }})
+              </option>
+            </select>
+            <p v-if="daftarBarangTerfilter.length === 0 && selectedKategori" class="text-xs text-red-500 mt-1 italic">
+              *Tidak ada barang tersedia di kategori ini.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah Pinjam</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2 text-left">Jumlah Pinjam</label>
             <input v-model="form.jumlah" type="number" min="1" required
-              class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500">
+              class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 text-left">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Kondisi Barang</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2 text-left">Kondisi Barang</label>
             <select v-model="form.kondisi_pinjam" required
               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500">
               <option value="Baik">Baik</option>
@@ -51,22 +67,22 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Keperluan</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2 text-left">Keperluan</label>
           <textarea v-model="form.keperluan" required rows="3"
             class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500"
-            placeholder="Contoh: Untuk keperluan kerja bakti RT 05"></textarea>
+            placeholder="Tuliskan keperluan peminjaman..."></textarea>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Pinjam</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2 text-left">Tanggal Pinjam</label>
             <input v-model="form.tgl_pinjam" type="date" required
-              class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500">
+              class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 font-sans">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Rencana Kembali</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2 text-left">Rencana Kembali</label>
             <input v-model="form.tgl_rencana_kembali" type="date" required
-              class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500">
+              class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 font-sans">
           </div>
         </div>
 
@@ -82,17 +98,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 const router = useRouter()
 
-// Wadah buat daftar pilihan
 const daftarWarga = ref([])
 const daftarBarang = ref([])
+const daftarKategori = ref([])
+const selectedKategori = ref('')
 
-// Wadah data form
 const form = ref({
   warga_id: '',
   barang_id: '',
@@ -103,17 +119,28 @@ const form = ref({
   tgl_rencana_kembali: ''
 })
 
-// Ambil data pilihan dari API
+// Filter Otomatis
+const daftarBarangTerfilter = computed(() => {
+  if (!selectedKategori.value) return daftarBarang.value
+  return daftarBarang.value.filter(b => b.kategori_id == selectedKategori.value)
+})
+
+const onKategoriChange = () => {
+  form.value.barang_id = ''
+}
+
 const fetchDataPilihan = async () => {
   try {
-    const [resWarga, resBarang] = await Promise.all([
+    const [resWarga, resBarang, resKategori] = await Promise.all([
       axios.get('http://127.0.0.1:8000/api/v1/warga'),
-      axios.get('http://127.0.0.1:8000/api/v1/barang')
+      axios.get('http://127.0.0.1:8000/api/v1/barang'),
+      axios.get('http://127.0.0.1:8000/api/v1/kategori')
     ])
     daftarWarga.value = resWarga.data.data || resWarga.data
     daftarBarang.value = resBarang.data.data || resBarang.data
+    daftarKategori.value = resKategori.data.data || resKategori.data
   } catch (error) {
-    console.error("Gagal ambil data pilihan:", error)
+    console.error("Gagal load data API:", error)
   }
 }
 
@@ -124,19 +151,12 @@ onMounted(() => {
 const simpanData = async () => {
   try {
     const payload = { ...form.value, marbot_id: 1 }
-    // Kirim data ke backend
     const response = await axios.post('http://127.0.0.1:8000/api/v1/peminjaman', payload)
-    
-    alert(response.data.message || 'Alhamdulillah! Berhasil!')
+    alert(response.data.message || 'Data Peminjaman Berhasil Disimpan!')
     router.push('/peminjaman')
   } catch (error) {
-    // Cek kalau ada error dari Laravel (misal stok kurang atau validasi gagal)
-    if (error.response && error.response.data.message) {
-      alert('Gagal: ' + error.response.data.message)
-    } else {
-      alert('Aduh, ada masalah koneksi ke server, Wa!')
-    }
-    console.error("Detail Error:", error.response?.data)
+    const msg = error.response?.data?.message || 'Gagal menyimpan data.'
+    alert(msg)
   }
 }
 </script>

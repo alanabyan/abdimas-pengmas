@@ -12,7 +12,7 @@ class Peminjaman extends Model
     // Kasih tau Laravel kalau tabelnya namanya 'peminjamans'
     protected $table = 'peminjamans';
 
-    // Daftar kolom yang boleh diisi (sesuaikan dengan migration lu)
+    // Daftar kolom yang boleh diisi (sesuaikan dengan migration)
     protected $fillable = [
         'barang_id',
         'warga_id',
@@ -27,7 +27,7 @@ class Peminjaman extends Model
         'status',
     ];
 
-    // --- RELASI (Biar lu bisa tau siapa yang pinjam & barang apa yang dipinjam) ---
+    // --- RELASI (Biar bisa tau siapa yang pinjam & barang apa yang dipinjam) ---
 
     public function barang()
     {

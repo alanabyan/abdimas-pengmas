@@ -171,7 +171,8 @@ async function downloadPdf() {
         if (filter.dari) params.dari = filter.dari
         if (filter.sampai) params.sampai = filter.sampai
         const blob = await laporanService.downloadKerusakanPdf(params)
-        const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }))
+        const url = `http://localhost:8000/api/v1/laporan/kerusakan/pdf?dari=${filter.dari}&sampai=${filter.sampai}`;
+        window.open(url, '_blank');
         const a = document.createElement('a')
         a.href = url; a.download = `laporan-kerusakan-${new Date().toISOString().slice(0, 10)}.pdf`
         document.body.appendChild(a); a.click()

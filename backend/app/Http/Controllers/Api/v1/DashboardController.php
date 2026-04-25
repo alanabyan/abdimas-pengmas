@@ -14,13 +14,13 @@ class DashboardController extends Controller
     {
         try {
             // 1. Cek nama kolom, biasanya 'stok' bukan 'stok_total'
-            // Kalau di DB lu namanya 'stok', ganti sum('stok')
+            // Kalau di DB namanya 'stok', ganti sum('stok')
             $totalBarang = Barang::sum('stok_total') ?: 0; 
 
             // 2. Transaksi yang masih status 'Pinjam'
             $peminjamanAktif = Peminjaman::where('status', 'Pinjam')->count();
 
-            // 3. Hitung barang rusak (Sesuaikan dengan isi kolom kondisi lu)
+            // 3. Hitung barang rusak (Sesuaikan dengan isi kolom kondisi )
             $barangBermasalah = Barang::where('kondisi', '!=', 'Baik')->count();
 
             // 4. Stok kritis (Sesuai kolom stok_tersedia)
@@ -37,7 +37,7 @@ class DashboardController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            // Biar lu bisa liat error aslinya di log
+            // Biar bisa liat error aslinya di log
             Log::error("Dashboard Error: " . $e->getMessage());
             return response()->json([
                 'success' => false,

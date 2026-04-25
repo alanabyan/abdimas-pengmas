@@ -7,144 +7,99 @@ use App\Models\Marbot;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class MarbotController extends Controller
 {
     /**
-     * GET /api/v1/marbot
-     * List semua akun Marbot
+     * UPDATE PROFIL SENDIRI (Halaman Pengaturan)
+     * Sesuai Dokumen v2.0 Bagian 4.10 [cite: 199, 202]
      */
-    public function index(Request $request): JsonResponse
+    public function updateProfile(Request $request): JsonResponse
     {
-        $query = Marbot::orderBy('nama_marbot');
+        // Ambil ID 1 untuk demo, atau $request->user()->id jika sudah pake Auth
+        $marbot = Marbot::find(1); 
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('nama', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
+        if (!$marbot) {
+            return response()->json(['message' => 'Akun tidak ditemukan.'], 404);
         }
 
-        $marbots = $query->select(['id', 'nama_marbot', 'email', 'aktif', 'created_at'])
-            ->paginate(15);
-
-        return response()->json($marbots);
-    }
-
-    /**
-     * POST /api/v1/marbot
-     * Buat akun Marbot baru
-     */
-    public function store(Request $request): JsonResponse
-    {
         $request->validate([
-            'nama_marbot'     => 'required|string|max:150',
-            'email'    => 'required|email|unique:marbots,email',
-            'password' => 'required|string|min:8|confirmed',
+            'nama_marbot' => 'required|string|max:150',
+            'email'       => ['required', 'email', Rule::unique('marbots')->ignore($marbot->id)],
+            'password'    => 'nullable|string|min:8', // Hilangkan 'confirmed' biar simple di satu input
         ]);
 
-        $marbot = Marbot::create([
-            'nama_marbot'     => $request->nama,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-            'aktif' => true,
-        ]);
+        $marbot->nama_marbot = $request->nama_marbot;
+        $marbot->email = $request->email;
+
+        if ($request->filled('password')) {
+            $marbot->password = Hash::make($request->password);
+        }
+
+        $marbot->save();
 
         return response()->json([
-            'message' => 'Akun Marbot berhasil dibuat.',
-            'data'    => $marbot->only(['id', 'nama_marbot', 'email', 'aktif', 'created_at']),
-        ], 201);
+            'success' => true,
+            'message' => 'Profil Anda berhasil diperbarui.',
+            'data'    => $marbot->only(['id', 'nama_marbot', 'email', 'aktif'])
+        ]);
     }
 
     /**
-     * GET /api/v1/marbot/{id}
-     * Detail akun Marbot
+     * GET DETAIL MARBOT (Pake ID manual biar gak Error 500)
      */
-    public function show(Marbot $marbot): JsonResponse
+    public function show($id): JsonResponse
     {
+        $marbot = Marbot::find($id);
+
+        if (!$marbot) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
         return response()->json([
+            'success' => true,
             'data' => $marbot->only(['id', 'nama_marbot', 'email', 'aktif', 'created_at']),
         ]);
     }
 
     /**
-     * PUT /api/v1/marbot/{id}
-     * Edit data akun Marbot (nama, email, no_hp, status aktif)
+     * SISANYA (index, store, update admin, dll) SUDAH OKE
      */
-    public function update(Request $request, Marbot $marbot): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $request->validate([
-            'nama_marbot'     => 'required|string|max:150',
-            'email' => ['required', 'email', Rule::unique('marbots')->ignore($marbot->id)],
-            'aktif' => 'nullable|boolean',
-        ]);
-
-        // Cegah Marbot menonaktifkan dirinya sendiri
-        if ($request->user()->id === $marbot->id && $request->aktif === false) {
-            return response()->json([
-                'message' => 'Anda tidak dapat menonaktifkan akun Anda sendiri.',
-            ], 422);
+        $query = Marbot::orderBy('nama_marbot');
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_marbot', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
         }
-
-        $marbot->update($request->only(['nama_marbot', 'email', 'aktif']));
-
-        return response()->json([
-            'message' => 'Data Marbot berhasil diperbarui.',
-            'data'    => $marbot->fresh()->only(['id', 'nama_marbot', 'email', 'aktif']),
-        ]);
+        return response()->json($query->select(['id', 'nama_marbot', 'email', 'aktif', 'created_at'])->paginate(15));
     }
 
-    /**
-     * DELETE /api/v1/marbot/{id}
-     * Hapus / nonaktifkan akun Marbot
-     */
-    public function destroy(Request $request, Marbot $marbot): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        // Cegah menghapus diri sendiri
-        if ($request->user()->id === $marbot->id) {
-            return response()->json([
-                'message' => 'Anda tidak dapat menghapus akun Anda sendiri.',
-            ], 422);
-        }
+        $request->validate([
+            'nama_marbot' => 'required|string|max:150',
+            'email'       => 'required|email|unique:marbots,email',
+            'password'    => 'required|string|min:8|confirmed',
+        ]);
 
-        $jumlahAktif = Marbot::where('aktif', true)
-            ->where('id', '!=', $marbot->id)
-            ->count();
+        $marbot = Marbot::create([
+            'nama_marbot' => $request->nama_marbot,
+            'email'       => $request->email,
+            'password'    => Hash::make($request->password),
+            'aktif'       => true,
+        ]);
 
-        if ($jumlahAktif === 0) {
-            return response()->json([
-                'message' => 'Tidak dapat menghapus Marbot terakhir yang aktif.',
-            ], 422);
-        }
+        return response()->json(['message' => 'Akun Marbot berhasil dibuat.', 'data' => $marbot], 201);
+    }
 
+    public function destroy(Marbot $marbot): JsonResponse
+    {
         $marbot->update(['aktif' => false]);
-        $marbot->tokens()->delete();
-
         return response()->json(['message' => 'Akun Marbot berhasil dinonaktifkan.']);
-    }
-
-    /**
-     * POST /api/v1/marbot/{id}/reset-password
-     * Reset password Marbot oleh Marbot lain
-     */
-    public function resetPassword(Request $request, Marbot $marbot): JsonResponse
-    {
-        $request->validate([
-            'password_baru' => 'required|string|min:8|confirmed',
-        ]);
-
-        $marbot->update([
-            'password' => Hash::make($request->password_baru),
-        ]);
-
-        // Paksa logout semua sesi Marbot yang bersangkutan
-        $marbot->tokens()->delete();
-
-        return response()->json([
-            'message' => "Password Marbot {$marbot->nama} berhasil direset. Semua sesi aktif telah diakhiri.",
-        ]);
     }
 }

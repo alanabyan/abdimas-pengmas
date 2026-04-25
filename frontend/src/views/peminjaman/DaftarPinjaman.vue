@@ -19,7 +19,7 @@
           <tr>
             <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase">Peminjam</th>
             <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase">Barang</th>
-            <th class="px-6 py-4 text-center text-xs font-bold text-white uppercase text-center">Jumlah</th>
+            <th class="px-6 py-4 text-center text-xs font-bold text-white uppercase">Jumlah</th>
             <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase">Tgl Pinjam</th>
             <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase">Status</th>
             <th class="px-6 py-4 text-center text-xs font-bold text-white uppercase">Aksi</th>
@@ -44,14 +44,6 @@
               </span>
             </td>
             <td class="px-6 py-4 text-center">
-              <router-link 
-                v-if="['Aktif', 'Terlambat', 'Pinjam'].includes(p.status)"
-                :to="`/peminjaman/${p.id}/validasi`"
-                class="text-amber-600 hover:text-amber-800 font-semibold mr-3 underline"
-              >
-                Validasi Kembali
-              </router-link>
-              
               <button 
                 @click="hapusPinjaman(p.id)"
                 class="text-red-600 hover:text-red-800 font-semibold underline"
@@ -63,7 +55,7 @@
 
           <tr v-if="listPeminjaman.length === 0">
             <td colspan="6" class="px-6 py-10 text-center text-gray-500 italic">
-              Belum ada data peminjaman.
+              Data tidak ditemukan. Cek koneksi API atau Database.
             </td>
           </tr>
         </tbody>
@@ -78,10 +70,6 @@ import axios from 'axios'
 
 const listPeminjaman = ref([])
 
-/**
- * Styling Badge berdasarkan Enum Dokumen Alan 
- * 'Aktif', 'Selesai', 'Terlambat', 'Batal', 'Rusak/Hilang'
- */
 const getStatusClass = (status) => {
   switch (status) {
     case 'Selesai': return 'bg-green-100 text-green-800 border-green-200'
@@ -96,22 +84,27 @@ const getStatusClass = (status) => {
 const getPeminjaman = async () => {
   try {
     const response = await axios.get('http://localhost:8000/api/v1/peminjaman')
-    listPeminjaman.value = response.data.data || response.data
+    
+    // Cek format data: Kadang response.data, kadang response.data.data
+    if (response.data.data) {
+      listPeminjaman.value = response.data.data
+    } else {
+      listPeminjaman.value = response.data
+    }
+    
+    console.log("Isi listPeminjaman sekarang:", listPeminjaman.value)
   } catch (error) {
     console.error("Gagal narik data:", error)
   }
 }
 
 const hapusPinjaman = async (id) => {
-  // Sesuai alur v2.0: Batalkan peminjaman (stok dikembalikan) [cite: 186]
-  if (!confirm('Yakin mau hapus? Stok bakal balik otomatis (jika status Aktif/Pinjam).')) return
-  
+  if (!confirm('Yakin mau hapus?')) return
   try {
-    const response = await axios.delete(`http://localhost:8000/api/v1/peminjaman/${id}`)
-    alert(response.data.message || 'Data berhasil dihapus!')
+    await axios.delete(`http://localhost:8000/api/v1/peminjaman/${id}`)
     getPeminjaman() 
   } catch (error) {
-    alert('Gagal menghapus data!')
+    alert('Gagal hapus!')
   }
 }
 

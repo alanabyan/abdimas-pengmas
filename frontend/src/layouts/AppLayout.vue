@@ -24,11 +24,14 @@ const notifikasiStore = useNotifikasiStore()
 const router = useRouter()
 
 const mobileOpen = ref(false)
+const showNotif = ref(false) 
+const showProfileMenu = ref(false) // State untuk dropdown profil [cite: 163]
 
 const unreadCount = computed(() => notifikasiStore.unreadCount)
 
 const initials = computed(() => {
-    const nama = authStore.user?.nama || 'M'
+    // Sesuai tabel marbots kolom nama 
+    const nama = authStore.user?.nama_marbot || 'Marbot'
     return nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 })
 
@@ -46,6 +49,14 @@ const menus = [
 async function handleLogout() {
     await authStore.logout()
     router.push({ name: 'Login' })
+}
+
+const bacaNotif = async (id) => {
+    try {
+        await notifikasiStore.tandaiBaca(id)
+    } catch (error) {
+        console.error("Gagal update status baca:", error)
+    }
 }
 
 onMounted(() => {
@@ -95,7 +106,7 @@ onMounted(() => {
 
         <div class="flex-1 flex flex-col">
 
-            <header class="h-14 bg-white border-b flex items-center px-5 gap-2">
+            <header class="h-14 bg-white border-b flex items-center px-5 gap-2 relative text-left">
 
                 <button class="md:hidden p-2 rounded hover:bg-gray-100" @click="mobileOpen = true">
                     <Menu class="w-5 h-5" />
@@ -103,17 +114,91 @@ onMounted(() => {
 
                 <div class="flex-1" />
 
-                <RouterLink class="relative w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-                    <Bell class="w-5 h-5 text-slate-600" />
-                    <span v-if="unreadCount > 0"
-                        class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 rounded-full">
-                        {{ unreadCount > 9 ? '9+' : unreadCount }}
-                    </span>
-                </RouterLink>
+                <div class="relative">
+                    <button 
+                        @click="showNotif = !showNotif; showProfileMenu = false"
+                        class="relative w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-all"
+                    >
+                        <Bell class="w-5 h-5 text-slate-600" />
+                        <span v-if="unreadCount > 0"
+                            class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full border-2 border-white font-bold">
+                            {{ unreadCount > 9 ? '9+' : unreadCount }}
+                        </span>
+                    </button>
 
-                <div
-                    class="w-9 h-9 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold">
-                    {{ initials }}
+                    <div v-if="showNotif" 
+                        class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden"
+                    >
+                        <div class="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                            <h3 class="font-bold text-[#064E3B] text-xs uppercase tracking-widest">Notifikasi</h3>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
+                                {{ unreadCount }} Baru
+                            </span>
+                        </div>
+                        
+                        <div class="max-h-80 overflow-y-auto">
+                            <div v-for="n in notifikasiStore.notifikasis" :key="n.id" 
+                                class="p-4 hover:bg-emerald-50 transition cursor-pointer border-b border-gray-50 last:border-0"
+                                @click="bacaNotif(n.id)"
+                            >
+                                <div class="flex gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                                        <span v-if="n.peminjaman">⏰</span>
+                                        <span v-else>⚠️</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-[11px] text-gray-800 leading-relaxed font-medium">{{ n.pesan }}</p>
+                                        <p class="text-[9px] text-gray-400 mt-1 uppercase">Barusan</p>
+                                    </div>
+                                    <div v-if="!n.dibaca" class="w-2 h-2 bg-emerald-500 rounded-full self-center"></div>
+                                </div>
+                            </div>
+
+                            <div v-if="notifikasiStore.notifikasis.length === 0" class="p-10 text-center text-gray-400 text-[11px] italic">
+                                Belum ada pemberitahuan.
+                            </div>
+                        </div>
+
+                        <RouterLink to="/notifikasi" @click="showNotif = false" class="block p-3 text-center text-[10px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition uppercase tracking-widest">
+                            Lihat Semua
+                        </RouterLink>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <button 
+                        @click="showProfileMenu = !showProfileMenu; showNotif = false"
+                        class="w-9 h-9 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold shadow-sm hover:bg-green-700 transition-all border-2 border-white ring-1 ring-gray-100"
+                    >
+                        {{ initials }}
+                    </button>
+
+                    <div v-if="showProfileMenu" 
+                        class="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden"
+                    >
+                        <div class="p-4 border-b border-gray-50 bg-gray-50/30">
+                            <p class="text-[9px] text-gray-400 uppercase font-black tracking-widest mb-1">Akun Marbot</p>
+                            <p class="text-xs font-bold text-[#064E3B] truncate">{{ authStore.user?.nama_marbot }}</p>
+                            <p class="text-[10px] text-gray-500 truncate">{{ authStore.user?.email }}</p>
+                        </div>
+                        
+                        <div class="p-2">
+                            <RouterLink 
+                                to="/pengaturan" 
+                                @click="showProfileMenu = false"
+                                class="flex items-center gap-3 w-full p-2.5 text-left text-xs text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl transition"
+                            >
+                                <Settings class="w-4 h-4" /> Pengaturan Profil
+                            </RouterLink>
+                            
+                            <button 
+                                @click="handleLogout"
+                                class="flex items-center gap-3 w-full p-2.5 text-left text-xs text-red-500 hover:bg-red-50 rounded-xl transition"
+                            >
+                                <LogOutIcon class="w-4 h-4" /> Keluar Sistem
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </header>
 
@@ -123,4 +208,6 @@ onMounted(() => {
 
         </div>
     </div>
+
+    <div v-if="showNotif || showProfileMenu" @click="showNotif = false; showProfileMenu = false" class="fixed inset-0 z-40"></div>
 </template>

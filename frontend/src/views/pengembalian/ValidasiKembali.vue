@@ -1,60 +1,59 @@
 <template>
-  <div class="p-6 bg-gray-50 min-h-screen font-sans">
-    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md border border-emerald-100 overflow-hidden">
-      <div class="bg-emerald-600 p-4">
-        <h2 class="text-xl font-bold text-white text-center">Validasi Pengembalian Barang</h2>
+  <div v-if="dataPinjam" class="fixed inset-0 bg-emerald-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+      
+      <div class="bg-emerald-700 p-4 text-white flex justify-between items-center font-bold">
+        <span>Konfirmasi Barang Kembali</span>
+        <button @click="$emit('close')" class="hover:bg-emerald-800 rounded-lg p-1">✕</button>
       </div>
 
-      <form @submit.prevent="submitValidasi" class="p-6 space-y-4">
-        <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100 mb-6">
-          <p class="text-sm text-emerald-800 font-semibold text-center uppercase tracking-wider">Detail Transaksi</p>
-          <div class="grid grid-cols-2 gap-2 mt-2 text-sm text-gray-700">
-            <span class="font-medium">Barang:</span> <span>{{ detailPeminjaman.barang?.nama_barang }}</span>
-            <span class="font-medium">Jumlah:</span> <span>{{ detailPeminjaman.jumlah }} Unit</span>
-            <span class="font-medium">Peminjam:</span> <span>{{ detailPeminjaman.warga?.nama_warga }}</span>
-          </div>
+      <form @submit.prevent="submitValidasi" class="p-6 space-y-5 text-left">
+        
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm space-y-1">
+          <p class="text-gray-500">
+            Peminjam: <span class="text-emerald-900 font-bold">{{ dataPinjam?.warga?.nama_warga || 'Tidak diketahui' }}</span>
+          </p>
+          <p class="text-gray-500">
+            Item: <span class="text-emerald-900 font-bold">{{ dataPinjam?.barang?.nama_barang || 'Barang Terhapus' }} ({{ dataPinjam?.jumlah }} unit)</span>
+          </p>
         </div>
 
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-1">Kondisi Barang Saat Kembali</label>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Kondisi Saat Ini</label>
           <select 
             v-model="form.kondisi_kembali" 
-            class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+            class="w-full border-gray-200 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 py-3 font-medium text-gray-700"
             required
           >
-            <option value="Baik">Baik (Stok kembali utuh)</option>
-            <option value="Rusak">Rusak (Stok kembali, butuh servis)</option>
-            <option value="Hilang">Hilang (Stok TIDAK bertambah)</option>
+            <option value="Baik">✅ Baik / Lengkap</option>
+            <option value="Rusak">⚠️ Rusak</option>
+            <option value="Hilang">❌ Hilang</option>
           </select>
         </div>
 
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-1">
-            Catatan Tambahan 
-            <span v-if="form.kondisi_kembali !== 'Baik'" class="text-red-500">*</span>
-          </label>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Catatan Marbot</label>
           <textarea 
             v-model="form.catatan" 
-            rows="3" 
-            class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-            :placeholder="form.kondisi_kembali === 'Baik' ? 'Catatan opsional...' : 'Jelaskan kronologi kerusakan/kehilangan secara detail'"
-            :required="form.kondisi_kembali !== 'Baik'"
+            placeholder="Ada bagian yang lecet atau alasan hilang..."
+            class="w-full border-gray-200 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 h-24 p-3"
           ></textarea>
         </div>
 
-        <div class="flex gap-3 pt-4">
+        <div class="flex space-x-3">
           <button 
             type="button" 
-            @click="$router.push('/peminjaman')"
-            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg transition"
+            @click="$emit('close')"
+            class="flex-1 py-3 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 font-bold"
           >
             Batal
           </button>
           <button 
             type="submit" 
-            class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow-lg transition"
+            :disabled="loading"
+            class="flex-1 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold shadow-lg disabled:bg-emerald-300"
           >
-            Simpan Validasi
+            {{ loading ? 'Menyimpan...' : 'Simpan Data' }}
           </button>
         </div>
       </form>
@@ -63,38 +62,41 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { reactive, ref } from 'vue'
 import axios from 'axios'
 
-const route = useRoute()
-const router = useRouter()
-const detailPeminjaman = ref({})
-const form = ref({
+// Definisikan props agar Vue tahu dataPinjam itu dikirim dari Index.vue
+const props = defineProps({
+  dataPinjam: {
+    type: Object,
+    default: null
+  }
+})
+
+const emit = defineEmits(['close', 'success'])
+const loading = ref(false)
+
+const form = reactive({
   kondisi_kembali: 'Baik',
   catatan: ''
 })
 
-// Load data peminjaman buat info di atas
-const fetchDetail = async () => {
-  try {
-    const response = await axios.get(`http://localhost:8000/api/v1/peminjaman/${route.params.id}`)
-    detailPeminjaman.value = response.data.data
-  } catch (error) {
-    alert('Data peminjaman tidak ditemukan!')
-    router.push('/peminjaman')
-  }
-}
-
 const submitValidasi = async () => {
+  if (!props.dataPinjam?.id) return alert('ID Peminjaman tidak ditemukan!')
+  
+  loading.value = true
   try {
-    const response = await axios.post(`http://localhost:8000/api/v1/pengembalian/${route.params.id}/validasi`, form.value)
+    const url = `http://localhost:8000/api/v1/pengembalian/${props.dataPinjam.id}`
+    const response = await axios.post(url, form)
+    
     alert(response.data.message)
-    router.push('/peminjaman')
+    emit('success')
+    emit('close')
   } catch (error) {
-    alert('Gagal memvalidasi pengembalian!')
+    alert('Aduh Wa, gagal simpan data!')
+    console.error(error)
+  } finally {
+    loading.value = false
   }
 }
-
-onMounted(fetchDetail)
 </script>
