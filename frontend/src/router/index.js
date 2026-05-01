@@ -24,6 +24,7 @@ import TambahBarang from '@/views/barang/TambahBarang.vue'
 import EditBarang from '@/views/barang/EditBarang.vue'
 import DaftarKategori from '@/views/kategori/DaftarKategori.vue'
 import TambahKategori from '@/views/kategori/TambahKategori.vue'
+import DetailBarang from '@/views/barang/DetailBarang.vue'
 
 // --- Import Komponen (PENGEMBALIAN) ---
 const DaftarPengembalian = () => import('@/views/pengembalian/Index.vue')
@@ -90,6 +91,7 @@ const routes = [
 
       // Barang & Kategori
       { path: 'barang', name: 'Daftar Barang', component: DaftarBarang, meta: { title: 'Daftar Barang' } },
+      {path: 'barang/:id', name: 'Detail Barang', component: DetailBarang, meta: {title: 'Detail Barang'}},
       { path: 'barang/tambah', name: 'Tambah Barang', component: TambahBarang, meta: { title: 'Tambah Barang' } },
       { path: 'barang/:id/edit', name: 'Edit Barang', component: EditBarang, meta: { title: 'Edit Barang' } },
       { path: 'kategori', name: 'Daftar Kategori', component: DaftarKategori, meta: { title: 'Daftar Kategori' } },

@@ -5,9 +5,10 @@
         <h1 class="text-2xl font-bold text-emerald-900 font-sans">Laporan Peminjaman</h1>
         <p class="text-emerald-700 text-sm">Data riwayat peminjaman barang inventaris.</p>
       </div>
-      
-      <button @click="cetakLaporan" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-2">
-        <span>🖨️</span> Cetak PDF
+
+      <button @click="cetakLaporan"
+        class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-2">
+        Cetak PDF
       </button>
     </div>
 
@@ -50,7 +51,8 @@
             </td>
             <td class="px-6 py-4 text-left">
               <div class="text-sm text-gray-800 font-medium">{{ p.barang?.nama_barang }}</div>
-              <div class="text-[10px] inline-block px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded font-bold uppercase">
+              <div
+                class="text-[10px] inline-block px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded font-bold uppercase">
                 {{ p.barang?.kategori?.nama_kategori || p.barang?.kategori?.nama || 'Tanpa Kategori' }}
               </div>
             </td>

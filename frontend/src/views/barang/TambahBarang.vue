@@ -56,7 +56,7 @@
                                 :class="{ 'field-input--error': errors.kategori_id }">
                                 <option value="">Pilih kategori...</option>
                                 <option v-for="k in kategoris" :key="k.id" :value="k.id">
-                                    {{ k.ikon ? k.ikon + ' ' : '' }}{{ k.nama }}
+                                    {{ k.nama }}
                                 </option>
                             </select>
                             <p v-if="errors.kategori_id" class="field-error">{{ errors.kategori_id }}</p>

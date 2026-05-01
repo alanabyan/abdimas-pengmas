@@ -137,14 +137,13 @@
                                 <td class="td-lokasi">{{ b.lokasi || '—' }}</td>
                                 <td>
                                     <div class="action-btns">
-                                        <button class="act-btn act-btn--view" title="Lihat detail"
-                                            @click.stop="selectBarang(b)">
+                                        <RouterLink :to="`/barang/${b.id}`" class="act-btn act-btn--view" title="Lihat detail">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                                 stroke-linecap="round" width="14" height="14">
                                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                                                 <circle cx="12" cy="12" r="3" />
                                             </svg>
-                                        </button>
+                                        </RouterLink>
                                         <RouterLink :to="`/barang/${b.id}/edit`" class="act-btn act-btn--edit"
                                             title="Edit" @click.stop>
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -153,6 +152,9 @@
                                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                             </svg>
                                         </RouterLink>
+                                        <button @click=confirmDelete(b) class="act-btn">
+                                            <Trash2 size="16" />
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -210,121 +212,7 @@
                 </div>
 
                 <!-- Detail barang -->
-                <div class="detail-card" v-if="selectedBarang">
-                    <!-- Foto -->
-                    <div class="detail-foto-wrap">
-                        <img v-if="selectedBarang.foto_url" :src="selectedBarang.foto_url" :alt="selectedBarang.nama_barang"
-                            class="detail-foto" />
-                        <div v-else class="detail-foto-placeholder"
-                            :style="{ background: itemColor(selectedBarang.nama_barang) }">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                                stroke-linecap="round" width="28" height="28" style="color:white; opacity:0.7">
-                                <rect x="2" y="7" width="20" height="14" rx="2" />
-                                <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-                            </svg>
-                        </div>
-                        <!-- Foto upload overlay -->
-                        <label class="foto-upload-btn" title="Ganti foto">
-                            <input type="file" accept="image/*" class="foto-input" @change="onFotoChange" />
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" width="12" height="12">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="17 8 12 3 7 8" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
-                        </label>
-                        <button v-if="selectedBarang.foto_url" class="foto-delete-btn" title="Hapus foto"
-                            @click="doHapusFoto">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" width="11" height="11">
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- Header -->
-                    <div class="detail-header">
-                        <div class="detail-meta">
-                            <p class="detail-name">{{ selectedBarang.nama_barang }}</p>
-                            <span class="detail-kategori">{{ selectedBarang.kategori?.nama ?? '—' }}</span>
-                        </div>
-                        <RouterLink :to="`/barang/${selectedBarang.id}/edit`" class="btn-edit-sm">Edit</RouterLink>
-                    </div>
-
-                    <!-- Stok visual -->
-                    <div class="stok-detail-box">
-                        <div class="stok-detail-item">
-                            <p class="stok-detail-val stok-detail-val--green">{{ selectedBarang.stok_tersedia ?? '—' }}
-                            </p>
-                            <p class="stok-detail-label">Tersedia</p>
-                        </div>
-                        <div class="stok-detail-divider"></div>
-                        <div class="stok-detail-item">
-                            <p class="stok-detail-val stok-detail-val--orange">{{ stokDipinjam }}</p>
-                            <p class="stok-detail-label">Dipinjam</p>
-                        </div>
-                        <div class="stok-detail-divider"></div>
-                        <div class="stok-detail-item">
-                            <p class="stok-detail-val">{{ selectedBarang.stok_total ?? '—' }}</p>
-                            <p class="stok-detail-label">Total</p>
-                        </div>
-                    </div>
-
-                    <!-- Info fields -->
-                    <div class="detail-fields">
-                        <div class="detail-field">
-                            <span class="field-label">Kondisi</span>
-                            <span class="badge-kondisi" :class="kondisiClass(selectedBarang.kondisi)">
-                                {{ selectedBarang.kondisi }}
-                            </span>
-                        </div>
-                        <div class="detail-field">
-                            <span class="field-label">Lokasi</span>
-                            <span class="field-val">{{ selectedBarang.lokasi || '—' }}</span>
-                        </div>
-                        <div class="detail-field" v-if="selectedBarang.deskripsi">
-                            <span class="field-label">Deskripsi</span>
-                            <span class="field-val field-val--desc">{{ selectedBarang.deskripsi }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Riwayat peminjaman terbaru -->
-                    <div v-if="selectedBarang.peminjamans?.length" class="riwayat-box">
-                        <p class="riwayat-title">Peminjaman Terbaru</p>
-                        <div v-for="p in selectedBarang.peminjamans.slice(0, 3)" :key="p.id" class="riwayat-item">
-                            <div class="riwayat-dot" :class="statusDotClass(p.status)"></div>
-                            <div class="riwayat-info">
-                                <p class="riwayat-name">{{ p.warga?.nama ?? '—' }}</p>
-                                <p class="riwayat-date">{{ p.tgl_rencana_kembali ?? '' }} · {{ p.status }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Hapus -->
-                    <button class="btn-delete" @click="confirmDelete(selectedBarang)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" width="14" height="14">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6l-1 14H6L5 6" />
-                            <path d="M10 11v6" />
-                            <path d="M14 11v6" />
-                            <path d="M9 6V4h6v2" />
-                        </svg>
-                        Hapus Barang
-                    </button>
-                </div>
-
-                <!-- Placeholder saat belum pilih -->
-                <div v-else class="detail-placeholder">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"
-                        style="color:#cbd5e1">
-                        <rect x="2" y="7" width="20" height="14" rx="2" />
-                        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-                    </svg>
-                    <p>Pilih barang untuk melihat detail</p>
-                </div>
-
+                
                 <!-- Kondisi summary -->
                 <div class="kondisi-card" v-if="barangs.length">
                     <p class="activity-title">Ringkasan Kondisi</p>
@@ -383,6 +271,7 @@ import { RouterLink } from 'vue-router'
 import { useBarangStore } from '@/stores/barang'
 import barangService from '@/services/barangService'
 import { useToast } from 'vue-toastification'
+import { Trash2 } from 'lucide-vue-next'
 
 const store = useBarangStore()
 const toast = useToast()
@@ -422,11 +311,6 @@ const paginationInfo = computed(() => {
 const statsTersedia = computed(() => barangs.value.filter(b => (b.stok_tersedia ?? 0) > 0).length)
 const statsDipinjam = computed(() => barangs.value.reduce((acc, b) => acc + (b.stok_dipinjam ?? 0), 0))
 
-const stokDipinjam = computed(() => {
-    if (!selectedBarang.value) return 0
-    const b = selectedBarang.value
-    return (b.stok_total ?? 0) - (b.stok_tersedia ?? 0)
-})
 
 // ── Methods ─────────────────────────────────────────────────────────
 async function fetchData(page = 1) {
@@ -477,37 +361,6 @@ async function doDelete() {
     }
 }
 
-async function onFotoChange(e) {
-    const file = e.target.files?.[0]
-    if (!file || !selectedBarang.value) return
-    const fd = new FormData()
-    fd.append('foto', file)
-    try {
-        const res = await barangService.uploadFoto(selectedBarang.value.id, fd)
-        selectedBarang.value = { ...selectedBarang.value, foto_url: res.foto_url }
-        // update list juga
-        const idx = store.barangs.findIndex(b => b.id === selectedBarang.value.id)
-        if (idx !== -1) store.barangs[idx] = { ...store.barangs[idx], foto_url: res.foto_url }
-        toast.success('Foto berhasil diperbarui.')
-    } catch {
-        toast.error('Gagal mengupload foto.')
-    }
-    e.target.value = ''
-}
-
-async function doHapusFoto() {
-    if (!selectedBarang.value?.foto_url) return
-    try {
-        await barangService.hapusFoto(selectedBarang.value.id)
-        selectedBarang.value = { ...selectedBarang.value, foto_url: null }
-        const idx = store.barangs.findIndex(b => b.id === selectedBarang.value.id)
-        if (idx !== -1) store.barangs[idx] = { ...store.barangs[idx], foto_url: null }
-        toast.success('Foto berhasil dihapus.')
-    } catch {
-        toast.error('Gagal menghapus foto.')
-    }
-}
-
 // ── Helpers visual ──────────────────────────────────────────────────
 const COLORS = ['#16a34a', '#0891b2', '#7c3aed', '#db2777', '#ea580c', '#ca8a04', '#059669', '#2563eb']
 
@@ -533,13 +386,6 @@ function kondisiClass(kondisi) {
     if (kondisi === 'Baik') return 'badge-kondisi--baik'
     if (kondisi === 'Rusak Ringan') return 'badge-kondisi--ringan'
     return 'badge-kondisi--berat'
-}
-
-function statusDotClass(status) {
-    if (status === 'Aktif') return 'riwayat-dot--aktif'
-    if (status === 'Terlambat') return 'riwayat-dot--terlambat'
-    if (status === 'Selesai') return 'riwayat-dot--selesai'
-    return 'riwayat-dot--default'
 }
 
 function kondisiCount(kondisi) {
