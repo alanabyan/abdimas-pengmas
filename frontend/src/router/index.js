@@ -12,7 +12,7 @@ import EditWarga from '@/views/warga/EditWarga.vue'
 import DetailWarga from '@/views/warga/DetailWarga.vue'
 
 // Import Pengaturan
-import Pengaturan from '../views/pengaturan/Pengaturan.vue'
+import Pengaturan from '../views/pengaturan/PengaturanMarbot.vue'
 
 // --- Import Komponen (Laporan & Barang) ---
 import MenuLaporan from '@/views/laporan/MenuLaporan.vue'

@@ -27,6 +27,7 @@ Route::prefix('v1')->group(function () {
     // --- Fitur Auth ---
     Route::prefix('auth')->group(function () {
         Route::post('login', [AuthController::class, 'login']);
+        Route::post('logout', [AuthController::class, 'logout']);
     });
 
     // --- Fitur Warga & Notifikasi ---
@@ -65,6 +66,9 @@ Route::prefix('v1')->group(function () {
     Route::post('pengembalian/{id}', [PengembalianController::class, 'store']);
 
     //update data marbot
-    Route::put('marbot/profile/update', [MarbotController::class, 'updateProfile']);
-    Route::get('marbot/{marbot}', [MarbotController::class, 'show']);
+    Route::get('marbot', [MarbotController::class, 'index']);
+    Route::post('marbot', [MarbotController::class, 'store']);
+    Route::post('marbot/{marbot}/reset-password', [MarbotController::class, 'resetPassword']);
+    Route::delete('marbot/{marbot}', [MarbotController::class,'destroy']);
+    Route::put('marbot/{marbot}', [MarbotController::class,'update']);
 });
