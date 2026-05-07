@@ -4,6 +4,7 @@ import peminjamanService from '@/services/peminjamanService'
 
 export const usePeminjamanStore = defineStore('peminjaman', () => {
     const peminjamans = ref([])
+    const allPeminjamans = ref([])
     const pengembalians = ref([])
     const currentPeminjaman = ref(null)
     const loading = ref(false)
@@ -16,6 +17,13 @@ export const usePeminjamanStore = defineStore('peminjaman', () => {
             peminjamans.value = res.data
             meta.value = { current_page: res.current_page, last_page: res.last_page, total: res.total, per_page: res.per_page }
         } finally { loading.value = false }
+    }
+
+    async function fetchAllPeminjamans() {
+        try {
+            const res = await peminjamanService.getAll({per_page: 9999})
+            allPeminjamans.value = res.data
+        } catch {}
     }
 
     async function fetchPeminjaman(id) {
@@ -69,8 +77,8 @@ export const usePeminjamanStore = defineStore('peminjaman', () => {
     }
 
     return {
-        peminjamans, pengembalians, currentPeminjaman, loading, meta,
-        fetchPeminjamans, fetchPeminjaman, createPeminjaman, updatePeminjaman,
+        peminjamans, allPeminjamans, pengembalians, currentPeminjaman, loading, meta,
+        fetchPeminjamans, fetchAllPeminjamans, fetchPeminjaman, createPeminjaman, updatePeminjaman,
         batalPeminjaman, konfirmasiPeminjaman, fetchPengembalians, validasiPengembalian,
     }
 })

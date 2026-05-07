@@ -17,6 +17,7 @@ const MAP = {
     'Menunggu': { key: 'menunggu', label: 'Menunggu' },
     'Aktif': { key: 'aktif', label: 'Aktif' },
     'Selesai': { key: 'selesai', label: 'Selesai' },
+    'Telat': { key: 'telat', label: 'Telat' },
     'Batal': { key: 'batal', label: 'Batal' },
 }
 
@@ -70,9 +71,18 @@ const cfg = computed(() => MAP[props.status] ?? { key: 'default', label: props.s
     color: #7c3aed;
 }
 
-.badge-batal {
+.badge-telat {
     background: #fee2e2;
-    color: #dc2626;
+    color: #991b1b;
+}
+
+.badge-telat .badge-dot {
+    animation: pulse 1.2s infinite;
+}
+
+.badge-batal {
+    background: #f1f5f9;
+    color: #64748b;
 }
 
 .badge-default {

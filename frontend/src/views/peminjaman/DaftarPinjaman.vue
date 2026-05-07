@@ -41,7 +41,7 @@
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input v-model="filters.search" placeholder="Cari warga atau barang..." @input="doFetch" />
+        <input v-model="filters.search" placeholder="Cari warga atau barang..." />
       </div>
       <div class="filter-chips">
         <button v-for="s in statusOptions" :key="s.value" :class="['chip', { active: filters.status === s.value }]"
@@ -69,7 +69,7 @@
       </div>
 
       <!-- Empty -->
-      <div v-else-if="!store.peminjamans.length" class="empty">
+      <div v-else-if="!filteredPeminjamans.length" class="empty">
         <div class="empty-ico">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
             <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
@@ -94,7 +94,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(p, idx) in store.peminjamans" :key="p.id" class="data-row"
+          <tr v-for="(p, idx) in filteredPeminjamans" :key="p.id" class="data-row"
             :style="{ animationDelay: `${idx * 35}ms` }">
             <td>
               <div class="person-cell">
@@ -115,11 +115,10 @@
             <td>
               <span class="date-text" :class="{ overdue: isOverdue(p) }">
                 {{ fmtDate(p.tgl_rencana_kembali) }}
-                <span v-if="isOverdue(p)" class="overdue-tag">Telat</span>
               </span>
             </td>
             <td>
-              <StatusBadge :status="p.status" />
+              <StatusBadge :status="isOverdue(p) ? 'Telat' : p.status" />
             </td>
             <td>
               <div class="action-group">
@@ -233,22 +232,6 @@ const showBatal = ref(false)
 const batalTarget = ref(null)
 const toast = ref({ show: false, type: 'success', message: '' })
 
-// ── Stats ─────────────────────────────────────────────────────────────────
-const stats = computed(() => [
-  { label: 'Total', value: store.meta.total ?? store.peminjamans.length, color: '#1e3a5f' },
-  { label: 'Menunggu', value: store.peminjamans.filter(p => p.status === 'Menunggu').length, color: '#d97706' },
-  { label: 'Aktif', value: store.peminjamans.filter(p => p.status === 'Aktif').length, color: '#16a34a' },
-  { label: 'Selesai', value: store.peminjamans.filter(p => p.status === 'Selesai').length, color: '#6366f1' },
-])
-
-const statusOptions = [
-  { label: 'Semua', value: '', color: '#94a3b8' },
-  { label: 'Menunggu', value: 'Menunggu', color: '#d97706' },
-  { label: 'Aktif', value: 'Aktif', color: '#16a34a' },
-  { label: 'Selesai', value: 'Selesai', color: '#6366f1' },
-  { label: 'Batal', value: 'Batal', color: '#dc2626' },
-]
-
 // ── Helpers ───────────────────────────────────────────────────────────────
 const COLORS = ['#1e3a5f', '#16a34a', '#d97706', '#6366f1', '#0891b2', '#be185d', '#7c3aed']
 function avatarColor(name = '') {
@@ -261,17 +244,63 @@ function isOverdue(p) {
   return p.status === 'Aktif' && p.tgl_rencana_kembali && new Date(p.tgl_rencana_kembali) < new Date()
 }
 
-let toastTimer = null
-function showToast(type, message) {
-  clearTimeout(toastTimer)
-  toast.value = { show: true, type, message }
-  toastTimer = setTimeout(() => { toast.value.show = false }, 3500)
-}
+// ── Stats ─────────────────────────────────────────────────────────────────
+const stats = computed(() => [
+  { label: 'Total', value: store.allPeminjamans.length, color: '#1e3a5f' },
+  { label: 'Menunggu', value: store.allPeminjamans.filter(p => p.status === 'Menunggu').length, color: '#d97706' },
+  { label: 'Aktif', value: store.allPeminjamans.filter(p => p.status === 'Aktif' && !isOverdue(p)).length, color: '#16a34a' },
+  { label: 'Telat', value: store.allPeminjamans.filter(p => isOverdue(p)).length, color: '#dc2626' },
+  { label: 'Selesai', value: store.allPeminjamans.filter(p => p.status === 'Selesai').length, color: '#6366f1' },
+  { label: 'Batal', value: store.allPeminjamans.filter(p => p.status === 'Batal').length, color: '#64748b' },
+])
 
-// ── Fetch ─────────────────────────────────────────────────────────────────
+const statusOptions = [
+  { label: 'Semua', value: '', color: '#94a3b8' },
+  { label: 'Menunggu', value: 'Menunggu', color: '#d97706' },
+  { label: 'Aktif', value: 'Aktif', color: '#16a34a' },
+  { label: 'Telat', value: 'Telat', color: '#dc2626' }, // ← value 'Telat', filter di frontend
+  { label: 'Selesai', value: 'Selesai', color: '#6366f1' },
+  { label: 'Batal', value: 'Batal', color: '#64748b' },
+]
+
+// ── Filter (semua dilakukan di frontend, termasuk Telat) ──────────────────
+const filteredPeminjamans = computed(() => {
+  let list = store.peminjamans
+
+  // Filter by status (termasuk Telat yang merupakan logika frontend)
+  if (filters.value.status) {
+    if (filters.value.status === 'Telat') {
+      // Telat = status Aktif di backend + sudah melewati tgl rencana kembali
+      list = list.filter(p => isOverdue(p))
+    } else if (filters.value.status === 'Aktif') {
+      // Aktif = status Aktif di backend tapi BELUM overdue
+      list = list.filter(p => p.status === 'Aktif' && !isOverdue(p))
+    } else {
+      list = list.filter(p => p.status === filters.value.status)
+    }
+  }
+
+  // Filter by search
+  if (filters.value.search.trim()) {
+    const kw = filters.value.search.toLowerCase()
+    list = list.filter(p =>
+      (p.warga?.nama_warga ?? p.warga?.nama ?? '').toLowerCase().includes(kw) ||
+      (p.barang?.nama_barang ?? p.barang?.nama ?? '').toLowerCase().includes(kw)
+    )
+  }
+
+  return list
+})
+
+// ── Fetch — Telat TIDAK dikirim ke API karena bukan status backend ─────────
 function doFetch(page = 1) {
   const params = { page, per_page: 15 }
-  if (filters.value.status) params.status = filters.value.status
+  // Jika filter 'Telat' atau 'Aktif', kirim 'Aktif' ke backend (overdue difilter frontend)
+  if (filters.value.status === 'Telat' || filters.value.status === 'Aktif') {
+    params.status = 'Aktif'
+  } else if (filters.value.status) {
+    params.status = filters.value.status
+  }
   if (filters.value.search) params.search = filters.value.search
   store.fetchPeminjamans(params)
 }
@@ -282,6 +311,14 @@ function setStatus(val) {
 }
 
 function goPage(page) { doFetch(page) }
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+let toastTimer = null
+function showToast(type, message) {
+  clearTimeout(toastTimer)
+  toast.value = { show: true, type, message }
+  toastTimer = setTimeout(() => { toast.value.show = false }, 3500)
+}
 
 // ── Aksi ──────────────────────────────────────────────────────────────────
 async function handleKonfirmasi(p) {
@@ -307,7 +344,10 @@ async function submitBatal() {
   } finally { actionLoading.value = null }
 }
 
-onMounted(() => doFetch())
+onMounted(() => {
+  store.fetchAllPeminjamans()
+  doFetch()
+})
 </script>
 
 <style scoped>
@@ -395,10 +435,12 @@ onMounted(() => doFetch())
   display: flex;
   gap: 14px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .stat-card {
   flex: 1;
+  min-width: 90px;
   background: #fff;
   border-radius: 12px;
   padding: 16px 20px;
@@ -581,7 +623,6 @@ onMounted(() => doFetch())
   }
 }
 
-/* Cells */
 .person-cell {
   display: flex;
   align-items: center;
@@ -638,18 +679,6 @@ onMounted(() => doFetch())
 .overdue {
   color: #dc2626 !important;
   font-weight: 600;
-}
-
-.overdue-tag {
-  display: inline-block;
-  background: #fee2e2;
-  color: #dc2626;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 6px;
-  margin-left: 4px;
-  letter-spacing: .3px;
 }
 
 /* Actions */
@@ -782,10 +811,10 @@ onMounted(() => doFetch())
   width: 34px;
   height: 34px;
   border-radius: 9px;
+  flex-shrink: 0;
   background: linear-gradient(90deg, #f0f2f5 25%, #e8ecf4 50%, #f0f2f5 75%);
   background-size: 200%;
   animation: shimmer 1.4s infinite;
-  flex-shrink: 0;
 }
 
 .skel-lines {
@@ -1084,12 +1113,8 @@ onMounted(() => doFetch())
     padding: 16px;
   }
 
-  .stats-row {
-    flex-wrap: wrap;
-  }
-
   .stat-card {
-    min-width: calc(50% - 7px);
+    min-width: calc(33% - 10px);
   }
 
   .data-table th:nth-child(4),

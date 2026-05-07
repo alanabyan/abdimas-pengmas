@@ -39,6 +39,14 @@ class PeminjamanController extends Controller
             $query->where('barang_id', $request->barang_id);
         }
 
+        if ($request->filled('search')) {
+            $keyword = $request->search;
+            $query->where(function ($q) use ($keyword) {
+                $q->whereHas('warga', fn($w) => $w->where('nama_warga', 'like', "%{$keyword}%"))
+                    ->orWhereHas('barang', fn($b) => $b->where('nama_barang', 'like', "%{$keyword}%"));
+            });
+        }
+
         $peminjamans = $query->latest()->paginate($request->get('per_page', 15));
 
         return response()->json($peminjamans);
