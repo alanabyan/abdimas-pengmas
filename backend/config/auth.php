@@ -6,7 +6,7 @@
 return [
 
     'defaults' => [
-        'guard'     => 'marbot',
+        'guard'     => ['marbot'],
         'passwords' => 'marbots',
     ],
 

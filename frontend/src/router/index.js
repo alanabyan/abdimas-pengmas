@@ -25,9 +25,11 @@ import EditBarang from '@/views/barang/EditBarang.vue'
 import DaftarKategori from '@/views/kategori/DaftarKategori.vue'
 import TambahKategori from '@/views/kategori/TambahKategori.vue'
 import DetailBarang from '@/views/barang/DetailBarang.vue'
+import PeminjamanDetail from '@/views/peminjaman/PeminjamanDetail.vue'
+import PeminjamanEdit from '@/views/peminjaman/PeminjamanEdit.vue'
 
 // --- Import Komponen (PENGEMBALIAN) ---
-const DaftarPengembalian = () => import('@/views/pengembalian/Index.vue')
+const DaftarPengembalian = () => import('@/views/pengembalian/DaftarPengembalian.vue')
 const Login = () => import('@/views/auth/LoginPage.vue')
 
 const routes = [
@@ -62,7 +64,7 @@ const routes = [
       {
         path: 'dashboard',
         name: 'Dashboard',
-        component: () => import('../views/dashboard/Dashboard.vue'),
+        component: () => import('../views/dashboard/DashboardPage.vue'),
         meta: { title: 'Dashboard' }
       },
 
@@ -74,6 +76,8 @@ const routes = [
 
       // Peminjaman
       { path: 'peminjaman', name: 'peminjaman.index', component: DaftarPinjaman, meta: { title: 'Daftar Peminjaman' } },
+      { path: '/peminjaman/:id', component: PeminjamanDetail },
+      { path: '/peminjaman/:id/edit', component: PeminjamanEdit },
       { path: 'peminjaman/tambah', name: 'peminjaman.create', component: TambahPinjaman, meta: { title: 'Tambah Peminjaman' } },
       
       // Pengembalian

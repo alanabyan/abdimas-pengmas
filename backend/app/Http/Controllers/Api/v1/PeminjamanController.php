@@ -3,162 +3,208 @@
 namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Peminjaman;
 use App\Models\Barang;
+use App\Models\Peminjaman;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class PeminjamanController extends Controller
 {
     /**
-     * Tampilkan daftar peminjaman dengan relasi kategori
+     * GET /api/v1/peminjaman
+     * List semua peminjaman dengan filter status dan tanggal.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        // Kuncinya di 'barang.kategori' biar sinkron sama data 
-        $peminjaman = Peminjaman::with(['barang.kategori', 'warga', 'marbot'])->latest()->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar Data Peminjaman',
-            'data'    => $peminjaman
+        $query = Peminjaman::with([
+            'warga:id,nama_warga,no_hp,rt_rw',
+            'barang:id,nama_barang,foto_url',
+            'marbot:id,nama_marbot',
         ]);
-    }
 
-    /**
-     * Tampilkan detail peminjaman
-     */
-    public function show($id): JsonResponse
-    {
-        $peminjaman = Peminjaman::with(['barang.kategori', 'warga', 'marbot'])->find($id);
-
-        if (!$peminjaman) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan!'
-            ], 404);
+        if ($request->filled('status')) {
+            $query->byStatus($request->status);
         }
 
-        return response()->json([
-            'success' => true,
-            'data'    => $peminjaman
-        ]);
+        if ($request->filled('dari') || $request->filled('sampai')) {
+            $query->byTanggal($request->dari, $request->sampai);
+        }
+
+        if ($request->filled('warga_id')) {
+            $query->where('warga_id', $request->warga_id);
+        }
+
+        if ($request->filled('barang_id')) {
+            $query->where('barang_id', $request->barang_id);
+        }
+
+        $peminjamans = $query->latest()->paginate($request->get('per_page', 15));
+
+        return response()->json($peminjamans);
     }
 
     /**
-     * Simpan peminjaman baru + Potong Stok
+     * POST /api/v1/peminjaman
+     * Buat peminjaman baru. Stok barang berkurang otomatis.
      */
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'barang_id'           => 'required|exists:barangs,id',
-            'warga_id'            => 'required|exists:wargas,id',
-            'jumlah'              => 'required|integer|min:1',
-            'tgl_pinjam'          => 'required|date',
-            'tgl_rencana_kembali' => 'required|date|after_or_equal:tgl_pinjam',
+            'barang_id'           => ['required', 'exists:barangs,id'],
+            'warga_id'            => ['required', 'exists:wargas,id'],
+            'keperluan'           => ['required', 'string', 'max:255'],
+            'jumlah'              => ['required', 'integer', 'min:1'],
+            'kondisi_pinjam'      => ['required', 'string', 'max:255'],
+            'tgl_pinjam'          => ['required', 'date'],
+            'tgl_rencana_kembali' => ['required', 'date', 'after_or_equal:tgl_pinjam'],
+            'catatan'             => ['nullable', 'string'],
         ]);
 
-        return DB::transaction(function () use ($request) {
-            $barang = Barang::findOrFail($request->barang_id);
+        $barang = Barang::findOrFail($request->barang_id);
 
-            // Cek Stok
-            if ($barang->stok_tersedia < $request->jumlah) {
-                return response()->json([
-                    'message' => "Stok {$barang->nama_barang} tidak cukup! Sisa: {$barang->stok_tersedia}"
-                ], 422);
-            }
-
-            // Simpan Data
-            $peminjaman = Peminjaman::create([
-                'barang_id'           => $request->barang_id,
-                'warga_id'            => $request->warga_id,
-                'marbot_id'           => 1, // Sementara manual atau Auth::id()
-                'keperluan'           => $request->keperluan,
-                'jumlah'              => $request->jumlah,
-                'kondisi_pinjam'      => $request->kondisi_pinjam ?? 'Baik',
-                'tgl_pinjam'          => $request->tgl_pinjam,
-                'tgl_rencana_kembali' => $request->tgl_rencana_kembali,
-                'status'              => 'Aktif',
-            ]);
-
-            // Potong Stok
-            $barang->decrement('stok_tersedia', $request->jumlah);
-
+        // Validasi ketersediaan stok
+        if ($barang->stok_tersedia < $request->jumlah) {
             return response()->json([
-                'message' => 'Peminjaman berhasil dicatat.',
-                'data'    => $peminjaman->load('barang.kategori') // Load balik biar lsg muncul di FE
-            ], 201);
-        });
-    }
+                'message' => "Stok tidak mencukupi. Tersedia: {$barang->stok_tersedia} unit.",
+            ], 422);
+        }
 
-    /**
-     * Update data peminjaman (Revisi data)
-     */
-    public function update(Request $request, $id): JsonResponse
-    {
-        $request->validate([
-            'barang_id'           => 'required|exists:barangs,id',
-            'warga_id'            => 'required|exists:wargas,id',
-            'jumlah'              => 'required|integer|min:1',
-            'tgl_rencana_kembali' => 'required|date|after_or_equal:tgl_pinjam',
-        ]);
+        $peminjaman = DB::transaction(function () use ($request, $barang) {
+            // Kurangi stok terlebih dahulu
+            $barang->kurangiStok($request->jumlah);
 
-        return DB::transaction(function () use ($request, $id) {
-            $peminjaman = Peminjaman::findOrFail($id);
-            
-            // Balikin stok lama dulu
-            $barangOld = Barang::find($peminjaman->barang_id);
-            $barangOld->increment('stok_tersedia', $peminjaman->jumlah);
-
-            // Cek stok baru
-            $barangNew = Barang::findOrFail($request->barang_id);
-            $barangNew->refresh();
-            
-            if ($barangNew->stok_tersedia < $request->jumlah) {
-                $barangOld->decrement('stok_tersedia', $peminjaman->jumlah);
-                return response()->json(['message' => 'Stok tidak mencukupi!'], 422);
-            }
-
-            // Potong stok baru
-            $barangNew->decrement('stok_tersedia', $request->jumlah);
-
-            $peminjaman->update([
+            return Peminjaman::create([
                 'barang_id'           => $request->barang_id,
                 'warga_id'            => $request->warga_id,
-                'jumlah'              => $request->jumlah,
+                'marbot_id'           => $request->user()->id,
                 'keperluan'           => $request->keperluan,
+                'jumlah'              => $request->jumlah,
                 'kondisi_pinjam'      => $request->kondisi_pinjam,
                 'tgl_pinjam'          => $request->tgl_pinjam,
                 'tgl_rencana_kembali' => $request->tgl_rencana_kembali,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Data peminjaman diperbarui!',
-                'data'    => $peminjaman->load('barang.kategori')
+                'status'              => Peminjaman::STATUS_MENUNGGU,
+                'catatan'             => $request->catatan,
             ]);
         });
+
+        $peminjaman->load(['warga:id,nama_warga,no_hp', 'barang:id,nama_barang', 'marbot:id,nama_marbot']);
+
+        return response()->json([
+            'message' => 'Peminjaman berhasil dibuat dan menunggu konfirmasi.',
+            'data'    => $peminjaman,
+        ], 201);
     }
 
     /**
-     * Hapus Peminjaman
+     * GET /api/v1/peminjaman/{peminjaman}
+     * Detail peminjaman lengkap.
      */
-    public function destroy($id): JsonResponse
+    public function show(Peminjaman $peminjaman): JsonResponse
     {
-        return DB::transaction(function () use ($id) {
-            $peminjaman = Peminjaman::findOrFail($id);
+        $peminjaman->load([
+            'warga',
+            'barang.kategori:id,nama',
+            'marbot:id,nama_marbot,email',
+        ]);
 
-            // Jika dihapus saat masih dipinjam, stok balik
-            if (in_array($peminjaman->status, ['Aktif', 'Terlambat'])) {
-                $barang = Barang::find($peminjaman->barang_id);
-                if ($barang) {
-                    $barang->increment('stok_tersedia', $peminjaman->jumlah);
-                }
+        return response()->json(['data' => $peminjaman]);
+    }
+
+    /**
+     * PUT /api/v1/peminjaman/{peminjaman}
+     * Edit peminjaman. Hanya bisa diubah jika status masih 'Menunggu'.
+     */
+    public function update(Request $request, Peminjaman $peminjaman): JsonResponse
+    {
+        if (! $peminjaman->bisaDiEdit()) {
+            return response()->json([
+                'message' => 'Peminjaman tidak dapat diubah karena sudah dikonfirmasi.',
+            ], 422);
+        }
+
+        $request->validate([
+            'warga_id'            => ['required', 'exists:wargas,id'],
+            'keperluan'           => ['required', 'string', 'max:255'],
+            'jumlah'              => ['required', 'integer', 'min:1'],
+            'kondisi_pinjam'      => ['required', 'string', 'max:255'],
+            'tgl_pinjam'          => ['required', 'date'],
+            'tgl_rencana_kembali' => ['required', 'date', 'after_or_equal:tgl_pinjam'],
+            'catatan'             => ['nullable', 'string'],
+        ]);
+
+        $barang = $peminjaman->barang;
+
+        // Hitung delta jika jumlah berubah
+        $deltaJumlah = $request->jumlah - $peminjaman->jumlah;
+        if ($deltaJumlah > 0 && $barang->stok_tersedia < $deltaJumlah) {
+            return response()->json([
+                'message' => "Stok tidak mencukupi untuk penambahan jumlah.",
+            ], 422);
+        }
+
+        DB::transaction(function () use ($request, $peminjaman, $barang, $deltaJumlah) {
+            // Sesuaikan stok jika jumlah berubah
+            if ($deltaJumlah > 0) {
+                $barang->kurangiStok($deltaJumlah);
+            } elseif ($deltaJumlah < 0) {
+                $barang->tambahStok(abs($deltaJumlah));
             }
 
-            $peminjaman->delete();
-            return response()->json(['message' => 'Peminjaman dihapus dan stok dikembalikan.']);
+            $peminjaman->update($request->only(
+                'warga_id',
+                'keperluan',
+                'jumlah',
+                'kondisi_pinjam',
+                'tgl_pinjam',
+                'tgl_rencana_kembali',
+                'catatan'
+            ));
         });
+
+        return response()->json([
+            'message' => 'Peminjaman berhasil diperbarui.',
+            'data'    => $peminjaman->fresh()->load(['warga:id,nama_warga', 'barang:id,nama_barang']),
+        ]);
+    }
+
+    /**
+     * DELETE /api/v1/peminjaman/{peminjaman}
+     * Batalkan peminjaman. Stok dikembalikan.
+     */
+    public function destroy(Peminjaman $peminjaman): JsonResponse
+    {
+        if (! $peminjaman->bisaDibatalkan()) {
+            return response()->json([
+                'message' => 'Peminjaman dengan status ini tidak dapat dibatalkan.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($peminjaman) {
+            $peminjaman->barang->tambahStok($peminjaman->jumlah);
+            $peminjaman->update(['status' => Peminjaman::STATUS_BATAL]);
+        });
+
+        return response()->json(['message' => 'Peminjaman berhasil dibatalkan dan stok dikembalikan.']);
+    }
+
+    /**
+     * PATCH /api/v1/peminjaman/{peminjaman}/konfirmasi
+     * Marbot mengonfirmasi peminjaman → status 'Aktif'.
+     */
+    public function konfirmasi(Peminjaman $peminjaman): JsonResponse
+    {
+        if ($peminjaman->status !== Peminjaman::STATUS_MENUNGGU) {
+            return response()->json([
+                'message' => 'Hanya peminjaman berstatus Menunggu yang bisa dikonfirmasi.',
+            ], 422);
+        }
+
+        $peminjaman->update(['status' => Peminjaman::STATUS_AKTIF]);
+
+        return response()->json([
+            'message' => 'Peminjaman berhasil dikonfirmasi dan berstatus Aktif.',
+            'data'    => $peminjaman->fresh(),
+        ]);
     }
 }

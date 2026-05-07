@@ -31,44 +31,51 @@ Route::prefix('v1')->group(function () {
     });
 
     // --- Fitur Warga & Notifikasi ---
-    Route::get('warga/search', [WargaController::class, 'search']);
-    Route::get('warga/{warga}/riwayat', [WargaController::class, 'riwayatPeminjaman']);
-    Route::get('notifikasi', [NotifikasiController::class, 'index']);
-    Route::patch('notifikasi/{notifikasi}/baca', [NotifikasiController::class, 'tandaiBaca']);
-    Route::delete('notifikasi/{notifikasi}', [NotifikasiController::class, 'destroy']);
+    Route::middleware('auth:sanctum')->group(function () {
 
-    // --- Fitur Laporan (Udah OK) ---
-    Route::get('laporan/peminjaman', [LaporanController::class, 'peminjaman']);
-    Route::get('laporan/kerusakan', [LaporanController::class, 'kerusakan']);
-    Route::get('laporan/stok', [LaporanController::class, 'stok']);
-    Route::get('laporan/peminjaman/pdf', [LaporanController::class, 'peminjamanPdf']);
-    Route::get('laporan/kerusakan/pdf', [LaporanController::class, 'kerusakanPdf']); // Tambahin ini buat PDF kerusakan
-    Route::get('laporan/tren-peminjaman', [LaporanController::class, 'trenPeminjaman']);
+        // --- Fitur Warga & Notifikasi ---
+        Route::get('warga/search', [WargaController::class, 'search']);
+        Route::get('warga/{warga}/riwayat', [WargaController::class, 'riwayatPeminjaman']);
+        Route::get('notifikasi', [NotifikasiController::class, 'index']);
+        Route::patch('notifikasi/{notifikasi}/baca', [NotifikasiController::class, 'tandaiBaca']);
+        Route::delete('notifikasi/{notifikasi}', [NotifikasiController::class, 'destroy']);
 
-    // --- Fitur Barang ---
-    Route::post('barang/{barang}/foto', [BarangController::class, 'uploadFoto']);
-    Route::delete('barang/{barang}/foto', [BarangController::class, 'hapusFoto']);
+        // --- Fitur Laporan ---
+        Route::get('laporan/peminjaman', [LaporanController::class, 'peminjaman']);
+        Route::get('laporan/kerusakan', [LaporanController::class, 'kerusakan']);
+        Route::get('laporan/stok', [LaporanController::class, 'stok']);
+        Route::get('laporan/peminjaman/pdf', [LaporanController::class, 'peminjamanPdf']);
+        Route::get('laporan/kerusakan/pdf', [LaporanController::class, 'kerusakanPdf']);
+        Route::get('laporan/tren-peminjaman', [LaporanController::class, 'trenPeminjaman']);
 
-    // --- Fitur Dashboard ---
-    Route::get('dashboard/statistik', [DashboardController::class, 'index']);
-    Route::get('dashboard/grafik', [DashboardController::class, 'getGrafik']);
+        // --- Fitur Barang ---
+        Route::post('barang/{barang}/foto', [BarangController::class, 'uploadFoto']);
+        Route::delete('barang/{barang}/foto', [BarangController::class, 'hapusFoto']);
 
-    // --- Fitur CRUD Utama ---
-    Route::apiResource('peminjaman', PeminjamanController::class);
-    Route::apiResource('warga', WargaController::class);
-    Route::apiResource('barang', BarangController::class);
-    Route::apiResource('kategori', KategoriController::class);
+        // --- Fitur Dashboard ---
+        Route::get('dashboard/statistik', [DashboardController::class, 'statistik']);
+        Route::get('dashboard/grafik-barang', [DashboardController::class, 'grafikBarang']);
+        Route::get('dashboard/grafik-peminjaman', [DashboardController::class, 'grafikPeminjaman']);
 
-    // --- 2. FITUR PENGEMBALIAN (Jalur Baru) ---
-    // GET: /api/v1/pengembalian -> Menampilkan barang yang bisa dikembalikan
-    Route::get('pengembalian', [PengembalianController::class, 'index']);
-    // POST: /api/v1/pengembalian/{id} -> Proses simpan pengembalian
-    Route::post('pengembalian/{id}', [PengembalianController::class, 'store']);
+        // --- Fitur CRUD Utama ---
+        Route::apiResource('peminjaman', PeminjamanController::class);
+        Route::apiResource('warga', WargaController::class);
+        Route::apiResource('barang', BarangController::class);
+        Route::apiResource('kategori', KategoriController::class);
 
-    //update data marbot
-    Route::get('marbot', [MarbotController::class, 'index']);
-    Route::post('marbot', [MarbotController::class, 'store']);
-    Route::post('marbot/{marbot}/reset-password', [MarbotController::class, 'resetPassword']);
-    Route::delete('marbot/{marbot}', [MarbotController::class,'destroy']);
-    Route::put('marbot/{marbot}', [MarbotController::class,'update']);
+        // --- Fitur Pengembalian ---
+        Route::get('pengembalian', [PengembalianController::class, 'index']);
+        Route::post('pengembalian/{id}', [PengembalianController::class, 'store']);
+
+        // --- Fitur Marbot ---
+        Route::get('marbot', [MarbotController::class, 'index']);
+        Route::post('marbot', [MarbotController::class, 'store']);
+        Route::post('marbot/{marbot}/reset-password', [MarbotController::class, 'resetPassword']);
+        Route::delete('marbot/{marbot}', [MarbotController::class, 'destroy']);
+        Route::put('marbot/{marbot}', [MarbotController::class, 'update']);
+
+        // --- Konfirmasi Peminjaman ---
+        Route::patch('peminjaman/{peminjaman}/konfirmasi', [PeminjamanController::class, 'konfirmasi'])
+            ->name('peminjaman.konfirmasi');
+    });
 });

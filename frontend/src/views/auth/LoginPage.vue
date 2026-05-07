@@ -28,7 +28,7 @@
 
             <form @submit.prevent="handleLogin" novalidate>
                 <div class="mb-4">
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Username or Email</label>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Email</label>
                     <div class="input-wrap" :class="{ 'ring-red-400 border-red-400': errors.email }">
                         <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm-7 9a7 7 0 1114 0H3z" />
@@ -42,8 +42,6 @@
                 <div class="mb-5">
                     <div class="flex items-center justify-between mb-1.5">
                         <label class="text-xs font-semibold text-gray-700">Password</label>
-                        <span
-                            class="text-xs font-semibold text-masjid-600 cursor-pointer hover:text-masjid-800">Forgot?</span>
                     </div>
                     <div class="input-wrap" :class="{ 'ring-red-400 border-red-400': errors.password }">
                         <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor">
@@ -93,12 +91,6 @@
                             class="dot-pulse" style="animation-delay:.4s"></span>
                     </span>
                 </button>
-
-                <p class="text-center text-xs text-gray-400 mt-4">
-                    Need a new account?
-                    <a href="mailto:admin@simba.id" class="text-masjid-600 font-semibold hover:underline">Contact
-                        Administrator</a>
-                </p>
             </form>
         </div>
 
