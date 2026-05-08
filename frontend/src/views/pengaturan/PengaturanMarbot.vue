@@ -131,19 +131,21 @@
             </td>
             <td>
               <div class="action-group">
-                <button class="action-btn btn-edit" @click="openEditModal(marbot)" title="Edit">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
+                <!-- Edit: super admin bisa edit siapa saja, marbot biasa hanya diri sendiri -->
+                <button v-if="authStore.user?.is_super_admin || marbot.id === authStore.user?.id"
+                  class="action-btn btn-edit" @click="openEditModal(marbot)" title="Edit">
+                  <EditIcon />
                 </button>
-                <button class="action-btn btn-reset" @click="openResetModal(marbot)" title="Reset Password">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
+
+                <!-- Reset Password: hanya super admin -->
+                <button v-if="authStore.user?.is_super_admin && marbot.id !== authStore.user?.id"
+                  class="action-btn btn-reset" @click="openResetModal(marbot)" title="Reset Password">
+                  <KeyRound />
                 </button>
-                <button class="action-btn btn-delete" @click="confirmDelete(marbot)" title="Nonaktifkan"
+
+                <!-- Nonaktifkan: hanya super admin, tidak bisa ke diri sendiri -->
+                <button v-if="authStore.user?.is_super_admin && marbot.id !== authStore.user?.id"
+                  class="action-btn btn-delete" @click="confirmDelete(marbot)" title="Nonaktifkan"
                   :disabled="!marbot.aktif">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10" />
@@ -363,6 +365,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useMarbotStore } from '@/stores/marbot'
 import { useAuthStore } from '@/stores/auth'
+import { EditIcon, KeyRound } from 'lucide-vue-next'
 
 const store = useMarbotStore()
 const authStore = useAuthStore()

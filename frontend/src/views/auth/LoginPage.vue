@@ -4,18 +4,7 @@
         <div class="login-card">
             <div class="flex justify-center mb-3">
                 <div class="logo-box">
-                    <svg viewBox="0 0 40 40" fill="none" width="34" height="34">
-                        <rect x="12" y="22" width="16" height="12" rx="1" fill="#166534" />
-                        <rect x="16" y="16" width="8" height="8" rx="1" fill="#166534" />
-                        <path d="M20 8C14 8 12 14 12 16L28 16C28 14 26 8 20 8Z" fill="#16a34a" />
-                        <path d="M12 22C8 22 7 18 7 17L12 17Z" fill="#166534" />
-                        <path d="M28 22C32 22 33 18 33 17L28 17Z" fill="#166534" />
-                        <rect x="6" y="24" width="4" height="10" rx="0.5" fill="#14532d" />
-                        <path d="M8 24C6.5 24 6 22 6 21.5L10 21.5C10 22 9.5 24 8 24Z" fill="#16a34a" />
-                        <rect x="30" y="24" width="4" height="10" rx="0.5" fill="#14532d" />
-                        <path d="M32 24C30.5 24 30 22 30 21.5L34 21.5C34 22 33.5 24 32 24Z" fill="#16a34a" />
-                        <path d="M17 34L17 28Q20 25 23 28L23 34Z" fill="#bbf7d0" />
-                    </svg>
+                    <Mosque />
                 </div>
             </div>
 

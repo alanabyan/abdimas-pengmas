@@ -44,7 +44,7 @@
                 </div>
 
                 <!-- Table -->
-                <div class="table-card">
+                <div class="table-card shadow-md">
                     <!-- Loading skeleton -->
                     <div v-if="loading" class="skeleton-wrap">
                         <div v-for="i in 5" :key="i" class="skeleton-row">
@@ -180,7 +180,7 @@
                 </div>
 
                 <!-- Detail warga -->
-                <div class="detail-card" v-if="selectedWarga">
+                <div class="detail-card shadow-md" v-if="selectedWarga">
                     <!-- Header -->
                     <div class="detail-header">
                         <div class="detail-avatar" :style="{ background: avatarColor(selectedWarga.nama_warga) }">
@@ -211,26 +211,7 @@
                         </div>
                     </div>
 
-                    <!-- Peminjaman aktif info -->
-                    <div v-if="peminjamanAktif" class="pinjam-box">
-                        <div class="pinjam-box__icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" width="14" height="14">
-                                <circle cx="12" cy="12" r="10" />
-                                <line x1="12" y1="8" x2="12" y2="12" />
-                                <line x1="12" y1="16" x2="12.01" y2="16" />
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="pinjam-box__text">Status Peminjaman Saat Ini</p>
-                            <p class="pinjam-box__sub">{{ peminjamanAktif }}</p>
-                        </div>
-                        <RouterLink :to="`/warga/${selectedWarga.id}`" class="pinjam-link">
-                            Lihat Inventaris →
-                        </RouterLink>
-                    </div>
-
-                    <div v-if="(selectedWarga?.peminjaman_aktif_count || 0) === 0">
+                    <div v-if="(selectedWarga?.peminjaman_aktif_count) || (!selectedWarga?.peminjaman_aktif_count)">
                         <RouterLink :to="`/warga/${selectedWarga.id}`" class="btn-edit-sm">
                             Lihat Inventaris
                         </RouterLink>
@@ -251,26 +232,13 @@
                 </div>
 
                 <!-- Placeholder saat belum pilih -->
-                <div v-else class="detail-placeholder">
+                <div v-else class="detail-placeholder shadow-md">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"
                         style="color:#cbd5e1">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                         <circle cx="9" cy="7" r="4" />
                     </svg>
                     <p>Pilih warga untuk melihat detail</p>
-                </div>
-
-                <!-- Aktivitas terbaru -->
-                <div class="activity-card" v-if="recentActivity.length">
-                    <p class="activity-title">Aktivitas Terbaru</p>
-                    <div v-for="act in recentActivity" :key="act.id" class="activity-item">
-                        <div class="act-avatar" :style="{ background: avatarColor(act.nama) }">{{ initials(act.nama) }}
-                        </div>
-                        <div class="act-info">
-                            <p class="act-name">{{ act.nama }}</p>
-                            <p class="act-desc">{{ act.keterangan }}</p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -353,25 +321,6 @@ const paginationInfo = computed(() => {
 // Stats (dummy — idealnya dari API dashboard)
 const statsAktif = computed(() => wargas.value.filter(w => w.peminjaman_aktif_count > 0).length || 0)
 const statsTerlambat = ref(0)
-
-// Peminjaman aktif warga terpilih
-const peminjamanAktif = computed(() => {
-    if (!selectedWarga.value?.peminjamans?.length) return null
-    const aktif = selectedWarga.value.peminjamans.find(p =>
-        ['Aktif', 'Menunggu', 'Terlambat'].includes(p.status)
-    )
-    if (!aktif) return null
-    return `Meminjam ${aktif.jumlah ?? 1} item · Kembali ${aktif.tgl_rencana_kembali}`
-})
-
-// Aktivitas terbaru (dummy dari data yang ada)
-const recentActivity = computed(() => {
-    return wargas.value.slice(0, 4).map(w => ({
-        id: w.id,
-        nama: w.nama_warga,
-        keterangan: 'Data warga terdaftar',
-    }))
-})
 
 // ── Methods ─────────────────────────────────────────────────────────
 async function fetchData(page = 1) {
@@ -1086,7 +1035,7 @@ onMounted(() => fetchData())
     background: white;
     border-radius: 12px;
     border: 1px solid #f0f0f0;
-    padding: 32px 16px;
+    padding: 37px 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1094,61 +1043,6 @@ onMounted(() => fetchData())
     color: #9ca3af;
     font-size: 13px;
     text-align: center;
-}
-
-/* Activity */
-.activity-card {
-    background: white;
-    border-radius: 12px;
-    border: 1px solid #f0f0f0;
-    padding: 14px 16px;
-}
-
-.activity-title {
-    font-size: 12px;
-    font-weight: 700;
-    color: #374151;
-    margin: 0 0 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-}
-
-.activity-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 0;
-    border-bottom: 1px solid #f9fafb;
-}
-
-.activity-item:last-child {
-    border-bottom: none;
-}
-
-.act-avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.act-name {
-    font-size: 12px;
-    font-weight: 600;
-    color: #111827;
-    margin: 0;
-}
-
-.act-desc {
-    font-size: 11px;
-    color: #9ca3af;
-    margin: 1px 0 0;
 }
 
 /* ── Modal ───────────────────────────────────────────────────────── */

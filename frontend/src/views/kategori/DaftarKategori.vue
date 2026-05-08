@@ -252,19 +252,19 @@
                             </div>
                         </div>
 
-                        <!-- Barang list -->
-                        <div v-if="selectedKategori.barangs?.length" class="barang-list-mini">
-                            <p class="barang-list-title">Barang Terdaftar</p>
-                            <div v-for="b in selectedKategori.barangs.slice(0, 5)" :key="b.id" class="barang-list-item">
-                                <div class="barang-list-dot" :class="kondisiDotClass(b.kondisi)"></div>
-                                <span class="barang-list-nama">{{ b.nama }}</span>
-                                <span class="barang-list-stok">{{ b.stok_tersedia }} tersedia</span>
-                            </div>
-                            <RouterLink v-if="selectedKategori.barangs.length > 5" to="/barang"
-                                class="barang-list-more">
-                                +{{ selectedKategori.barangs.length - 5 }} barang lainnya →
-                            </RouterLink>
-                        </div>
+                        <!-- ── TOMBOL LIHAT BARANG ── -->
+                        <button class="btn-lihat-barang" :disabled="(selectedKategori.barangs_count ?? 0) === 0"
+                            :style="{ '--accent': itemColor(selectedKategori.nama) }" @click="openBarangModal">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" width="14" height="14">
+                                <rect x="2" y="7" width="20" height="14" rx="2" />
+                                <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                            </svg>
+                            Lihat Barang
+                            <span class="btn-lihat-barang__badge" v-if="(selectedKategori.barangs_count ?? 0) > 0">
+                                {{ selectedKategori.barangs_count }}
+                            </span>
+                        </button>
 
                         <!-- Hapus -->
                         <button class="btn-delete" @click="confirmDelete(selectedKategori)"
@@ -299,8 +299,6 @@
                     <div class="dist-list">
                         <div v-for="k in topKategoris" :key="k.id" class="dist-item">
                             <div class="dist-label-wrap">
-
-                                <!-- SESUDAH -->
                                 <div class="dist-ikon-wrap" :style="{ color: itemColor(k.nama) }">
                                     <component v-if="k.ikon && getIcon(k.ikon)" :is="getIcon(k.ikon)" size="14" />
                                     <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -350,6 +348,100 @@
             </div>
         </div>
 
+        <!-- ── Modal Daftar Barang ─────────────────────────────────────── -->
+        <Transition name="modal-fade">
+            <div v-if="showBarangModal" class="modal-overlay" @click.self="showBarangModal = false">
+                <div class="modal modal--barang">
+
+                    <!-- Header modal -->
+                    <div class="modal-barang-header"
+                        :style="{ background: itemColor(selectedKategori?.nama_barang ?? '') + '12' }">
+                        <div class="modal-barang-title-wrap">
+                            <div class="modal-barang-ikon"
+                                :style="{ background: itemColor(selectedKategori?.nama_barang ?? '') + '22', color: itemColor(selectedKategori?.nama_barang ?? '') }">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" width="18" height="18">
+                                    <rect x="2" y="7" width="20" height="14" rx="2" />
+                                    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="modal-barang-title">Daftar Barang</h3>
+                                <p class="modal-barang-sub">{{ selectedKategori?.nama_barang }}</p>
+                            </div>
+                        </div>
+                        <button class="modal-close-btn" @click="showBarangModal = false">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" width="16" height="16">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Search barang -->
+                    <div class="modal-barang-search">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" width="14" height="14">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        <input v-model="barangSearch" type="text" placeholder="Cari barang..."
+                            class="search-input search-input--sm" />
+                        <button v-if="barangSearch" class="search-clear" @click="barangSearch = ''">✕</button>
+                    </div>
+
+                    <!-- List barang -->
+                    <div class="modal-barang-list">
+                        <!-- Empty state -->
+                        <div v-if="filteredModalBarangs.length === 0" class="modal-empty">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32"
+                                height="32" style="color:#cbd5e1">
+                                <rect x="2" y="7" width="20" height="14" rx="2" />
+                                <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                            </svg>
+                            <p>{{ barangSearch ? 'Tidak ada barang yang cocok' : 'Belum ada barang' }}</p>
+                        </div>
+
+                        <!-- Barang items -->
+                        <div v-for="b in filteredModalBarangs" :key="b.id" class="modal-barang-item">
+                            <div class="mbi-left">
+                                <div class="mbi-dot" :class="kondisiDotClass(b.kondisi)"></div>
+                                <div>
+                                    <p class="mbi-nama">{{ b.nama_barang }}</p>
+                                    <p class="mbi-meta">
+                                        <span class="mbi-kondisi" :class="'kondisi--' + kondisiKey(b.kondisi)">
+                                            {{ b.kondisi || 'Tidak diketahui' }}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mbi-right">
+                                <p class="mbi-stok">{{ b.stok_tersedia ?? 0 }}</p>
+                                <p class="mbi-stok-label">tersedia</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="modal-barang-footer">
+                        <span class="modal-footer-info">
+                            {{ filteredModalBarangs.length }} dari {{ selectedKategori?.barangs?.length ?? 0 }} barang
+                        </span>
+                        <RouterLink :to="{ path: '/barang', query: { kategori: selectedKategori?.id } }"
+                            class="btn-goto-barang" @click="showBarangModal = false">
+                            Kelola di halaman Barang
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" width="12" height="12">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                        </RouterLink>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+
     </div>
 </template>
 
@@ -362,9 +454,9 @@ import { useToast } from 'vue-toastification'
 import * as icons from 'lucide-vue-next'
 
 const iconMap = {
-    bucket: 'Droplet',        // pengganti ember
+    bucket: 'Droplet',
     'tools-kitchen': 'Utensils',
-    prayer: 'BookOpen',       // atau Heart / Book
+    prayer: 'BookOpen',
     plug: 'Plug',
     armchair: 'Armchair',
     box: 'Box'
@@ -385,6 +477,10 @@ const selectedKategori = ref(null)
 const showDeleteModal = ref(false)
 const deleteTarget = ref(null)
 const deleting = ref(false)
+
+// State modal barang
+const showBarangModal = ref(false)
+const barangSearch = ref('')
 
 // ── Computed ────────────────────────────────────────────────────────
 const kategoris = computed(() => store.kategoris)
@@ -408,21 +504,35 @@ const topKategoris = computed(() =>
 
 const maxBarang = computed(() => Math.max(...kategoris.value.map(k => k.barangs_count ?? 0), 1))
 
+// Barang yang ditampilkan di modal (dengan filter search)
+const filteredModalBarangs = computed(() => {
+    const list = selectedKategori.value?.barangs ?? []
+    if (!barangSearch.value) return list
+    const q = barangSearch.value.toLowerCase()
+    return list.filter(b => b.nama_barang.toLowerCase().includes(q))
+})
+
 // ── Methods ─────────────────────────────────────────────────────────
 async function selectKategori(k) {
-    selectedKategori.value = k
-    // Load detail (barangs list) jika belum ada
-    if (!k.barangs) {
-        try {
-            const detail = await kategoriService.getOne(k.id)
-            // merge ke store list & selected
-            const idx = store.kategoris.findIndex(s => s.id === k.id)
-            if (idx !== -1) store.kategoris[idx] = { ...store.kategoris[idx], ...detail }
-            selectedKategori.value = { ...k, ...detail }
-        } catch (err) {
-            console.error(err)
+    try {
+        const detail = await kategoriService.getOne(k.id)
+
+        const merged = { ...k, ...detail }
+
+        const idx = store.kategoris.findIndex(s => s.id === k.id)
+        if (idx !== -1) {
+            store.kategoris[idx] = merged
         }
+
+        selectedKategori.value = merged
+    } catch (err) {
+        console.error(err)
     }
+}
+
+function openBarangModal() {
+    barangSearch.value = ''
+    showBarangModal.value = true
 }
 
 function confirmDelete(k) {
@@ -460,6 +570,12 @@ function kondisiDotClass(kondisi) {
     if (kondisi === 'Baik') return 'dot--baik'
     if (kondisi === 'Rusak Ringan') return 'dot--ringan'
     return 'dot--berat'
+}
+
+function kondisiKey(kondisi) {
+    if (kondisi === 'Baik') return 'baik'
+    if (kondisi === 'Rusak Ringan') return 'ringan'
+    return 'berat'
 }
 
 onMounted(() => store.fetchKategoris())
@@ -567,6 +683,11 @@ onMounted(() => store.fetchKategoris())
     font-family: inherit;
 }
 
+.search-input--sm {
+    padding: 8px 32px 8px 34px;
+    font-size: 12.5px;
+}
+
 .search-input:focus {
     border-color: #16a34a;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
@@ -668,11 +789,6 @@ onMounted(() => store.fetchKategoris())
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-}
-
-.kcard-emoji {
-    font-size: 22px;
-    line-height: 1;
 }
 
 .dist-ikon-wrap {
@@ -932,7 +1048,6 @@ onMounted(() => store.fetchKategoris())
     }
 }
 
-/* Empty */
 .empty-state {
     display: flex;
     flex-direction: column;
@@ -1092,7 +1207,49 @@ onMounted(() => store.fetchKategoris())
     margin: 2px 0 0;
 }
 
-/* Barang list mini */
+/* ── Tombol Lihat Barang ─────────────────────────────────────────── */
+.btn-lihat-barang {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    justify-content: center;
+    padding: 9px 14px;
+    border-radius: 9px;
+    border: 1.5px solid var(--accent, #16a34a);
+    background: color-mix(in srgb, var(--accent, #16a34a) 8%, white);
+    color: var(--accent, #16a34a);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.btn-lihat-barang:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent, #16a34a) 15%, white);
+}
+
+.btn-lihat-barang:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-lihat-barang__badge {
+    margin-left: auto;
+    background: var(--accent, #16a34a);
+    color: white;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 99px;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* ── Dot & kondisi ───────────────────────────────────────────────── */
 .barang-list-mini {
     margin-bottom: 14px;
 }
@@ -1167,7 +1324,7 @@ onMounted(() => store.fetchKategoris())
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-top: 14px;
+    margin-top: 6px;
     background: none;
     border: 1px solid #fecaca;
     color: #dc2626;
@@ -1237,10 +1394,6 @@ onMounted(() => store.fetchKategoris())
     margin-bottom: 4px;
 }
 
-.dist-ikon {
-    font-size: 14px;
-}
-
 .dist-nama {
     flex: 1;
     font-size: 12px;
@@ -1267,7 +1420,7 @@ onMounted(() => store.fetchKategoris())
     transition: width 0.5s ease;
 }
 
-/* ── Modal ───────────────────────────────────────────────────────── */
+/* ── Modal (shared) ──────────────────────────────────────────────── */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -1288,6 +1441,234 @@ onMounted(() => store.fetchKategoris())
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
+/* ── Modal Barang ────────────────────────────────────────────────── */
+.modal--barang {
+    padding: 0;
+    max-width: 440px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-barang-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.modal-barang-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-barang-ikon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.modal-barang-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.modal-barang-sub {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 1px 0 0;
+}
+
+.modal-close-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #6b7280;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+
+.modal-close-btn:hover {
+    background: #f9fafb;
+    color: #374151;
+}
+
+.modal-barang-search {
+    padding: 0 18px 12px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.modal-barang-search .search-icon {
+    left: 29px;
+    top: 50%;
+    transform: translateY(-50%);
+    position: absolute;
+    pointer-events: none;
+    color: #9ca3af;
+}
+
+.modal-barang-search .search-clear {
+    right: 26px;
+    top: 50%;
+    transform: translateY(-60%);
+}
+
+.modal-barang-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 18px;
+    border-top: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 32px 0;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.modal-barang-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid #f9fafb;
+}
+
+.modal-barang-item:last-child {
+    border-bottom: none;
+}
+
+.mbi-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.mbi-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.mbi-nama {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+
+.mbi-meta {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mbi-kondisi {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 1.5px 6px;
+    border-radius: 5px;
+}
+
+.kondisi--baik {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.kondisi--ringan {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.kondisi--berat {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.mbi-right {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.mbi-stok {
+    font-size: 16px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0;
+    line-height: 1;
+}
+
+.mbi-stok-label {
+    font-size: 10px;
+    color: #9ca3af;
+    margin: 2px 0 0;
+}
+
+.modal-barang-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.modal-footer-info {
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+.btn-goto-barang {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #16a34a;
+    text-decoration: none;
+    border: 1px solid #86efac;
+    padding: 6px 11px;
+    border-radius: 7px;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.btn-goto-barang:hover {
+    background: #f0fdf4;
+}
+
+/* ── Modal hapus (unchanged) ─────────────────────────────────────── */
 .modal-icon {
     width: 44px;
     height: 44px;
@@ -1356,6 +1737,28 @@ onMounted(() => store.fetchKategoris())
 .btn-confirm-delete:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+/* ── Transition modal ────────────────────────────────────────────── */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.modal-fade-enter-active .modal--barang,
+.modal-fade-leave-active .modal--barang {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+    opacity: 0;
+}
+
+.modal-fade-enter-from .modal--barang,
+.modal-fade-leave-to .modal--barang {
+    transform: scale(0.96) translateY(8px);
+    opacity: 0;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────── */

@@ -122,6 +122,7 @@
             <select v-model="form.kondisi_pinjam" required class="form-control">
               <option value="Baik">Baik</option>
               <option value="Rusak Ringan">Rusak Ringan</option>
+              <option value="Rusak Berat">Rusak Berat</option>
             </select>
           </div>
         </div>
@@ -193,11 +194,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePeminjamanStore } from '@/stores/peminjaman'
 import api from '@/services/api'
-import { watch } from 'vue'
 
 const router = useRouter()
 const store = usePeminjamanStore()

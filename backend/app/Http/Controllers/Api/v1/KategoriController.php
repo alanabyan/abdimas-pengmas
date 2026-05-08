@@ -46,7 +46,7 @@ class KategoriController extends Controller
     public function show(Kategori $kategori): JsonResponse
     {
         $kategori->loadCount('barangs');
-        $kategori->load('barangs:id,nama,stok_tersedia,kondisi,kategori_id');
+        $kategori->load('barangs:id,nama_barang,stok_tersedia,kondisi,kategori_id');
 
         return response()->json(['data' => $kategori]);
     }

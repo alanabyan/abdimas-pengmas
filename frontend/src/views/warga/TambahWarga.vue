@@ -153,9 +153,19 @@ function buildRtRw() {
 
 function validate() {
     let ok = true
+    const phone = form.no_hp.replace(/\D/g, '')
     errors.nama_warga = errors.no_hp = errors.alamat = ''
     if (!form.nama_warga.trim()) { errors.nama = 'Nama wajib diisi.'; ok = false }
-    if (!form.no_hp.trim()) { errors.no_hp = 'Nomor HP wajib diisi.'; ok = false }
+    if (!phone) {
+        errors.no_hp = 'Nomor HP wajib diisi.'
+        ok = false
+    } else if (phone.length < 10) {
+        errors.no_hp = 'Nomor HP minimal 10 digit.'
+        ok = false
+    } else if (phone.length > 13) {
+        errors.no_hp = 'Nomor HP maksimal 13 digit.'
+        ok = false
+    }
     if (!form.alamat.trim()) { errors.alamat = 'Alamat wajib diisi.'; ok = false }
     return ok
 }

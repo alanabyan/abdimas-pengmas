@@ -60,7 +60,7 @@
         <thead>
           <tr>
             <th>Peminjam</th>
-            <th>Barang &amp; Kategori</th>
+            <th>Barang</th>
             <th>Jml</th>
             <th>Tgl Pinjam</th>
             <th>Batas Kembali</th>
@@ -86,9 +86,6 @@
             <!-- Barang & Kategori -->
             <td>
               <div class="barang-name">{{ item.barang?.nama_barang ?? '-' }}</div>
-              <span class="kategori-badge">
-                {{ item.barang?.kategori?.nama ?? item.barang?.kategori?.nama_kategori ?? 'Tanpa Kategori' }}
-              </span>
             </td>
 
             <!-- Jumlah -->
@@ -461,7 +458,7 @@ onMounted(fetchData)
 /* ── Action ── */
 .action-group {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .act-btn {

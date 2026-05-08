@@ -18,6 +18,7 @@ class Marbot extends Authenticatable
         'email',
         'password',
         'aktif',
+        'is_super_admin',
     ];
 
     protected $hidden = [
@@ -27,6 +28,7 @@ class Marbot extends Authenticatable
 
     protected $casts = [
         'aktif'             => 'boolean',
+        'is_super_admin'    => 'boolean',
         'email_verified_at' => 'datetime',
         'password'          => 'hashed',
     ];

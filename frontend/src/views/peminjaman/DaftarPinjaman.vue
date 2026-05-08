@@ -186,7 +186,7 @@
               </div>
               <h3 class="confirm-title">Batalkan Peminjaman?</h3>
               <p class="confirm-desc">Peminjaman <strong>{{ batalTarget?.warga?.nama_warga ?? batalTarget?.warga?.nama
-                  }}</strong> akan dibatalkan dan stok dikembalikan.</p>
+              }}</strong> akan dibatalkan dan stok dikembalikan.</p>
               <div class="modal-footer">
                 <button class="btn-cancel" @click="showBatal = false">Tidak</button>
                 <button class="btn-submit btn-danger" :disabled="actionLoading" @click="submitBatal">
@@ -251,6 +251,7 @@ const stats = computed(() => [
   { label: 'Aktif', value: store.allPeminjamans.filter(p => p.status === 'Aktif' && !isOverdue(p)).length, color: '#16a34a' },
   { label: 'Telat', value: store.allPeminjamans.filter(p => isOverdue(p)).length, color: '#dc2626' },
   { label: 'Selesai', value: store.allPeminjamans.filter(p => p.status === 'Selesai').length, color: '#6366f1' },
+  { label: 'Rusak/Hilang', value: store.allPeminjamans.filter(p => p.status === 'Rusak/Hilang').length, color: '#c2410c' },
   { label: 'Batal', value: store.allPeminjamans.filter(p => p.status === 'Batal').length, color: '#64748b' },
 ])
 
@@ -258,29 +259,26 @@ const statusOptions = [
   { label: 'Semua', value: '', color: '#94a3b8' },
   { label: 'Menunggu', value: 'Menunggu', color: '#d97706' },
   { label: 'Aktif', value: 'Aktif', color: '#16a34a' },
-  { label: 'Telat', value: 'Telat', color: '#dc2626' }, // ← value 'Telat', filter di frontend
+  { label: 'Telat', value: 'Telat', color: '#dc2626' },
   { label: 'Selesai', value: 'Selesai', color: '#6366f1' },
+  { label: 'Rusak/Hilang', value: 'Rusak/Hilang', color: '#c2410c' },
   { label: 'Batal', value: 'Batal', color: '#64748b' },
 ]
 
-// ── Filter (semua dilakukan di frontend, termasuk Telat) ──────────────────
+// ── Filter ────────────────────────────────────────────────────────────────
 const filteredPeminjamans = computed(() => {
   let list = store.peminjamans
 
-  // Filter by status (termasuk Telat yang merupakan logika frontend)
   if (filters.value.status) {
     if (filters.value.status === 'Telat') {
-      // Telat = status Aktif di backend + sudah melewati tgl rencana kembali
       list = list.filter(p => isOverdue(p))
     } else if (filters.value.status === 'Aktif') {
-      // Aktif = status Aktif di backend tapi BELUM overdue
       list = list.filter(p => p.status === 'Aktif' && !isOverdue(p))
     } else {
       list = list.filter(p => p.status === filters.value.status)
     }
   }
 
-  // Filter by search
   if (filters.value.search.trim()) {
     const kw = filters.value.search.toLowerCase()
     list = list.filter(p =>
@@ -292,13 +290,14 @@ const filteredPeminjamans = computed(() => {
   return list
 })
 
-// ── Fetch — Telat TIDAK dikirim ke API karena bukan status backend ─────────
+// ── Fetch ─────────────────────────────────────────────────────────────────
 function doFetch(page = 1) {
   const params = { page, per_page: 15 }
-  // Jika filter 'Telat' atau 'Aktif', kirim 'Aktif' ke backend (overdue difilter frontend)
   if (filters.value.status === 'Telat' || filters.value.status === 'Aktif') {
+    // Telat = Aktif di backend, overdue difilter frontend
     params.status = 'Aktif'
   } else if (filters.value.status) {
+    // Rusak/Hilang, Selesai, Batal, Menunggu — kirim langsung ke backend
     params.status = filters.value.status
   }
   if (filters.value.search) params.search = filters.value.search

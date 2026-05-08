@@ -270,8 +270,11 @@
                             </div>
 
                             <div class="pinjam-body">
-                                <p class="pinjam-body__name">{{ p.barang?.nama_barang ?? 'Barang tidak diketahui' }}
-                                </p>
+                                <div class="flex items-center gap-x-2">
+                                    <p class="pinjam-body__name">{{ p.barang?.nama_barang ?? 'Barang tidak diketahui' }}
+                                    </p>
+                                    <span v-if="p.jumlah" class="meta-chip meta-chip--qty">× {{ p.jumlah }}</span>
+                                </div>
                                 <div class="pinjam-body__meta">
                                     <span class="meta-chip">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -291,7 +294,6 @@
                                         </svg>
                                         Kembali {{ formatDate(p.tgl_rencana_kembali) }}
                                     </span>
-                                    <span v-if="p.jumlah" class="meta-chip meta-chip--qty">× {{ p.jumlah }}</span>
                                 </div>
                                 <p v-if="p.catatan" class="pinjam-body__note">{{ p.catatan }}</p>
                             </div>
@@ -1252,19 +1254,25 @@ onMounted(async () => { await loadWarga(); if (warga.value) fetchRiwayat() })
 .meta-chip {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
     font-size: 11px;
     color: #6b7280;
     background: #f4f4f5;
-    padding: 2px 8px;
+    padding: 0.5px 6px;
     border-radius: 6px;
     font-weight: 500;
+    /* margin-bottom:1px; */
 }
 
 .meta-chip--qty {
+    display: flex;
+    align-items: center;
+    text-align: center;
     background: #eff6ff;
     color: #2563eb;
-    font-weight: 800;
+    font-weight: 600;
+    margin-bottom: 3px;
 }
 
 .pinjam-body__note {

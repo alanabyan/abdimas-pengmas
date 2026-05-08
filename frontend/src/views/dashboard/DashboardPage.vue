@@ -13,9 +13,6 @@
             hariIni }}</p>
         </div>
       </div>
-      <button class="btn-refresh" :class="{ spinning: refreshing }" @click="loadAll(true)" title="Refresh data">
-        <RefreshCw :size="16" />
-      </button>
     </div>
 
     <!-- Stat Cards -->
@@ -134,7 +131,6 @@ import dashboardService from '@/services/dashboardService'
 
 import {
   LayoutGrid,
-  RefreshCw,
   Package,
   Tag,
   Users,
@@ -264,7 +260,6 @@ async function renderBarChart() {
       },
       scales: {
         x: {
-          stacked: true,
           grid: { display: false },
           ticks: {
             color: '#a0aec0',
@@ -275,7 +270,6 @@ async function renderBarChart() {
           border: { display: false },
         },
         y: {
-          stacked: true,
           beginAtZero: true,
           grid: { color: '#f1f4f9', lineWidth: 1 },
           ticks: { color: '#a0aec0', font: { size: 11 }, precision: 0 },

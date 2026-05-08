@@ -43,7 +43,8 @@
             <div>
                 <p class="locked-title">Peminjaman tidak dapat diubah</p>
                 <p class="locked-sub">Status saat ini: <strong>{{ p.status }}</strong>. Hanya peminjaman berstatus
-                    <strong>Menunggu</strong> yang bisa diedit.</p>
+                    <strong>Menunggu</strong> yang bisa diedit.
+                </p>
             </div>
             <router-link :to="`/peminjaman/${route.params.id}`" class="btn-primary">Lihat Detail</router-link>
         </div>
@@ -52,17 +53,45 @@
         <div v-else-if="p" class="form-card">
             <form @submit.prevent="submitEdit" class="form-inner">
 
-                <!-- Warga -->
-                <div class="form-group">
+                <!-- Warga (Searchable Dropdown) -->
+                <div class="form-group" style="position: relative;">
                     <label>Peminjam (Warga)</label>
-                    <select v-model="form.warga_id" required :class="{ error: errors.warga_id }">
-                        <option value="" disabled>-- Pilih Peminjam --</option>
-                        <option v-for="w in daftarWarga" :key="w.id" :value="w.id">{{ w.nama_warga }}</option>
-                    </select>
+                    <div class="search-select" :class="{ error: errors.warga_id, focused: dropdownOpen }">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        <input v-model="wargaSearch" :placeholder="selectedWargaLabel || '-- Cari peminjam...'"
+                            :class="{ 'has-value': selectedWargaLabel && !dropdownOpen }" @focus="dropdownOpen = true"
+                            @blur="onWargaBlur" />
+                        <button v-if="form.warga_id" type="button" class="clear-btn"
+                            @mousedown.prevent="form.warga_id = ''; wargaSearch = ''">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div v-if="dropdownOpen" class="warga-dropdown">
+                        <div v-if="!filteredWarga.length" class="warga-empty">Tidak ada hasil</div>
+                        <button v-for="w in filteredWarga" :key="w.id" type="button"
+                            :class="['warga-option', { active: form.warga_id === w.id }]"
+                            @mousedown.prevent="pilihWarga(w)">
+                            <div class="warga-avatar" :style="{ background: avatarColor(w.nama_warga) }">
+                                {{ initials(w.nama_warga) }}
+                            </div>
+                            <span>{{ w.nama_warga }}</span>
+                            <svg v-if="form.warga_id === w.id" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" class="check-ico">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </button>
+                    </div>
                     <span v-if="errors.warga_id" class="err-msg">{{ errors.warga_id }}</span>
                 </div>
 
-                <!-- Barang (readonly info, tidak bisa ganti barang saat edit) -->
+                <!-- Barang (readonly) -->
                 <div class="form-group">
                     <label>Barang</label>
                     <div class="readonly-field">
@@ -119,15 +148,9 @@
                     <div class="form-group">
                         <label>Rencana Kembali</label>
                         <input v-model="form.tgl_rencana_kembali" type="date" required :min="form.tgl_pinjam"
-                            :class="{ error: errors.tgl_rencana_kembali }" />
+                            :max="maxDate" :class="['form-control', { error: errors.tgl_rencana_kembali }]" />
                         <span v-if="errors.tgl_rencana_kembali" class="err-msg">{{ errors.tgl_rencana_kembali }}</span>
                     </div>
-                </div>
-
-                <!-- Catatan (opsional) -->
-                <div class="form-group">
-                    <label>Catatan <span class="optional">(opsional)</span></label>
-                    <textarea v-model="form.catatan" rows="2" placeholder="Catatan tambahan..."></textarea>
                 </div>
 
                 <!-- Server error -->
@@ -173,10 +196,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePeminjamanStore } from '@/stores/peminjaman'
-import axios from 'axios'
+import api from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -195,13 +218,48 @@ const form = ref({
     keperluan: '',
     tgl_pinjam: '',
     tgl_rencana_kembali: '',
-    catatan: '',
 })
 
+// ── Searchable dropdown ───────────────────────────────────────────────────
+const wargaSearch = ref('')
+const dropdownOpen = ref(false)
+
+const COLORS = ['#1e3a5f', '#16a34a', '#d97706', '#6366f1', '#0891b2', '#be185d', '#7c3aed']
+function avatarColor(name = '') {
+    let h = 0
+    for (const c of name) h = c.charCodeAt(0) + ((h << 5) - h)
+    return COLORS[Math.abs(h) % COLORS.length]
+}
+function initials(name = '') {
+    return (name || '').split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
+}
+
+const selectedWargaLabel = computed(() => {
+    if (!form.value.warga_id) return ''
+    const w = daftarWarga.value.find(w => w.id === form.value.warga_id)
+    return w?.nama_warga ?? ''
+})
+
+const filteredWarga = computed(() => {
+    if (!wargaSearch.value.trim()) return daftarWarga.value
+    return daftarWarga.value.filter(w =>
+        w.nama_warga.toLowerCase().includes(wargaSearch.value.toLowerCase())
+    )
+})
+
+function pilihWarga(w) {
+    form.value.warga_id = w.id
+    wargaSearch.value = ''
+    dropdownOpen.value = false
+}
+
+function onWargaBlur() {
+    setTimeout(() => { dropdownOpen.value = false }, 150)
+}
+
+// ── Computed ──────────────────────────────────────────────────────────────
 const p = computed(() => store.currentPeminjaman)
 
-// Stok maks = stok tersedia barang + jumlah yang sudah dipinjam sebelumnya
-// (karena edit tidak ubah barang, stok tersedia + jumlah lama = total bisa dipakai)
 const stokMaks = computed(() => {
     if (!p.value?.barang) return null
     const stokTersedia = p.value.barang.stok_tersedia ?? null
@@ -220,7 +278,7 @@ function onJumlahInput() {
     }
 }
 
-// Populate form saat data loaded
+// ── Helpers ───────────────────────────────────────────────────────────────
 function populateForm() {
     if (!p.value) return
     form.value = {
@@ -230,11 +288,29 @@ function populateForm() {
         keperluan: p.value.keperluan ?? '',
         tgl_pinjam: p.value.tgl_pinjam?.substring(0, 10) ?? '',
         tgl_rencana_kembali: p.value.tgl_rencana_kembali?.substring(0, 10) ?? '',
-        catatan: p.value.catatan ?? '',
     }
 }
 
-// Validate
+watch(() => form.value.tgl_rencana_kembali, (newVal) => {
+    if (!newVal) return
+
+    // blok tahun aneh seperti 275760
+    const year = new Date(newVal).getFullYear()
+
+    if (year > 2050 || year < 2000) {
+        form.value.tgl_rencana_kembali = form.value.tgl_pinjam
+        showToast('warning', 'Tanggal tidak valid.')
+        return
+    }
+
+    if (
+        form.value.tgl_pinjam &&
+        newVal < form.value.tgl_pinjam
+    ) {
+        form.value.tgl_rencana_kembali = form.value.tgl_pinjam
+    }
+})
+
 function validate() {
     const e = {}
     if (!form.value.warga_id) e.warga_id = 'Peminjam wajib dipilih.'
@@ -244,6 +320,11 @@ function validate() {
     if (!form.value.tgl_rencana_kembali) e.tgl_rencana_kembali = 'Rencana kembali wajib diisi.'
     else if (form.value.tgl_rencana_kembali < form.value.tgl_pinjam)
         e.tgl_rencana_kembali = 'Harus setelah atau sama dengan tanggal pinjam.'
+    const tahunKembali = new Date(form.value.tgl_rencana_kembali).getFullYear()
+
+    if (tahunKembali > 2100 || tahunKembali < 2000) {
+        e.tgl_rencana_kembali = 'Tahun tidak valid.'
+    }
     errors.value = e
     return Object.keys(e).length === 0
 }
@@ -276,7 +357,7 @@ async function submitEdit() {
 
 async function fetchWarga() {
     try {
-        const res = await axios.get('http://127.0.0.1:8000/api/v1/warga')
+        const res = await api.get('/warga')
         daftarWarga.value = res.data.data ?? res.data
     } catch { /* silent */ }
 }
@@ -297,7 +378,6 @@ onMounted(async () => {
     min-height: 100vh;
     background: #F4F6F9;
     color: #1a1f2e;
-    max-width: 780px;
 }
 
 .back-row {
@@ -476,6 +556,157 @@ onMounted(async () => {
     resize: vertical;
 }
 
+/* Searchable dropdown */
+.search-select {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px solid #e8ecf4;
+    border-radius: 10px;
+    padding: 9px 12px;
+    background: #fff;
+    transition: border-color .2s;
+    box-sizing: border-box;
+}
+
+.search-select.focused {
+    border-color: #1e3a5f;
+}
+
+.search-select.error {
+    border-color: #dc2626;
+    background: #fff5f5;
+}
+
+.search-select>svg {
+    width: 15px;
+    height: 15px;
+    color: #a0aec0;
+    flex-shrink: 0;
+}
+
+.search-select input {
+    border: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    font-size: 14px;
+    color: #1a1f2e;
+    flex: 1;
+    outline: none;
+    background: transparent;
+    min-width: 0;
+    width: auto;
+    box-sizing: border-box;
+}
+
+.search-select input.has-value {
+    color: #1a1f2e;
+    font-weight: 500;
+}
+
+.search-select input::placeholder {
+    color: #a0aec0;
+    font-weight: 400;
+}
+
+.search-select input.has-value::placeholder {
+    color: #1a1f2e;
+    font-weight: 500;
+}
+
+.clear-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    color: #a0aec0;
+    display: flex;
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: color .15s;
+}
+
+.clear-btn:hover {
+    color: #dc2626;
+}
+
+.clear-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.warga-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1.5px solid #e8ecf4;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .1);
+    z-index: 100;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.warga-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #1a1f2e;
+    text-align: left;
+    transition: background .12s;
+    box-sizing: border-box;
+}
+
+.warga-option:hover {
+    background: #f1f5f9;
+}
+
+.warga-option.active {
+    background: #eff6ff;
+    color: #1e3a5f;
+    font-weight: 600;
+}
+
+.warga-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.check-ico {
+    width: 14px;
+    height: 14px;
+    color: #1e3a5f;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.warga-empty {
+    padding: 16px;
+    text-align: center;
+    font-size: 13px;
+    color: #a0aec0;
+}
+
+/* Readonly field */
 .readonly-field {
     display: flex;
     align-items: center;
@@ -542,6 +773,7 @@ onMounted(async () => {
     text-decoration: none;
     display: inline-flex;
     align-items: center;
+    transition: border-color .15s;
 }
 
 .btn-cancel:hover {

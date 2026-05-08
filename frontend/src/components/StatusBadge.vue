@@ -19,6 +19,7 @@ const MAP = {
     'Selesai': { key: 'selesai', label: 'Selesai' },
     'Telat': { key: 'telat', label: 'Telat' },
     'Batal': { key: 'batal', label: 'Batal' },
+    'Rusak/Hilang': { key: 'rusak', label: 'Rusak / Hilang' },
 }
 
 const cfg = computed(() => MAP[props.status] ?? { key: 'default', label: props.status })
@@ -83,6 +84,16 @@ const cfg = computed(() => MAP[props.status] ?? { key: 'default', label: props.s
 .badge-batal {
     background: #f1f5f9;
     color: #64748b;
+}
+
+/* Status Rusak/Hilang */
+.badge-rusak {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.badge-rusak .badge-dot {
+    animation: pulse 1.5s infinite;
 }
 
 .badge-default {

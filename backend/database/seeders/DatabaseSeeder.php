@@ -15,10 +15,11 @@ class DatabaseSeeder extends Seeder
     {
         // 1. Akun Marbot 
         $marbot = Marbot::create([
-            'nama_marbot' => 'Marbot Utama',
-            'email'       => 'marbot@masjid.com',
-            'password'    => Hash::make('password123'),
-            'aktif'       => true,
+            'nama_marbot'    => 'Marbot Utama',
+            'email'          => 'marbot@masjid.com',
+            'password'       => Hash::make('password123'),
+            'aktif'          => true,
+            'is_super_admin' => true,
         ]);
 
         // 2. Kategori Default 
@@ -37,7 +38,7 @@ class DatabaseSeeder extends Seeder
 
         // 3. Warga
         $wargaId = DB::table('wargas')->insertGetId([
-            'nama_warga' => 'Budi Santoso', 
+            'nama_warga' => 'Budi Santoso',
             'alamat' => 'RT 01 RW 02',
             'no_hp' => '08123456789',
             'created_at' => now(),

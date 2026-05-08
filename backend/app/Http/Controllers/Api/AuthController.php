@@ -49,6 +49,7 @@ class AuthController extends Controller
                 'nama_marbot'  => $marbot->nama_marbot,
                 'email' => $marbot->email,
                 'aktif' => $marbot->aktif,
+                'is_super_admin' => $marbot->is_super_admin,
             ],
         ]);
     }
@@ -73,7 +74,7 @@ class AuthController extends Controller
         return response()->json([
             'data' => [
                 'id'         => $marbot->id,
-                'nama'       => $marbot->nama,
+                'nama_marbot'       => $marbot->nama_marbot,
                 'email'      => $marbot->email,
                 'aktif'      => $marbot->aktif,
                 'created_at' => $marbot->created_at,

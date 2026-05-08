@@ -9,29 +9,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
-/**
- * MarbotController
- *
- * Mengelola akun Marbot (penjaga masjid):
- *  - index           : Daftar semua marbot (dengan search & pagination)
- *  - store           : Tambah akun marbot baru
- *  - show            : Detail satu marbot
- *  - update          : Edit data marbot (oleh admin/marbot lain)
- *  - destroy         : Nonaktifkan akun (soft-delete via kolom aktif)
- *  - updateProfile   : Marbot edit profil sendiri
- *  - resetPassword   : Reset password marbot oleh admin
- */
 class MarbotController extends Controller
 {
     // =========================================================================
     // INDEX – GET /api/v1/marbot
-    // Daftar semua akun marbot dengan pencarian & pagination.
     // =========================================================================
     public function index(Request $request): JsonResponse
     {
         $query = Marbot::orderBy('nama_marbot');
 
-        // Filter pencarian opsional (nama atau email)
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -40,13 +26,12 @@ class MarbotController extends Controller
             });
         }
 
-        // Filter status aktif opsional: ?aktif=1 atau ?aktif=0
         if ($request->has('aktif')) {
             $query->where('aktif', (bool) $request->aktif);
         }
 
         $marbots = $query
-            ->select(['id', 'nama_marbot', 'email', 'aktif', 'created_at'])
+            ->select(['id', 'nama_marbot', 'email', 'aktif', 'is_super_admin', 'created_at']) // ← tambah is_super_admin
             ->paginate(15);
 
         return response()->json($marbots);
@@ -54,10 +39,14 @@ class MarbotController extends Controller
 
     // =========================================================================
     // STORE – POST /api/v1/marbot
-    // Buat akun marbot baru.
     // =========================================================================
     public function store(Request $request): JsonResponse
     {
+        // Hanya super admin yang boleh membuat akun marbot baru
+        if (! $request->user()->is_super_admin) {
+            return response()->json(['message' => 'Akses ditolak.'], 403);
+        }
+
         $request->validate([
             'nama_marbot' => ['required', 'string', 'max:150'],
             'email'       => ['required', 'email', 'unique:marbots,email'],
@@ -79,11 +68,9 @@ class MarbotController extends Controller
 
     // =========================================================================
     // SHOW – GET /api/v1/marbot/{marbot}
-    // Detail satu marbot beserta jumlah peminjaman.
     // =========================================================================
     public function show(Marbot $marbot): JsonResponse
     {
-        // Sertakan jumlah peminjaman agar berguna di halaman detail
         $marbot->loadCount('peminjamans');
 
         return response()->json([
@@ -94,17 +81,27 @@ class MarbotController extends Controller
 
     // =========================================================================
     // UPDATE – PUT /api/v1/marbot/{marbot}
-    // Edit data marbot (nama, email, status aktif) oleh admin.
     // =========================================================================
     public function update(Request $request, Marbot $marbot): JsonResponse
     {
+        // Hanya super admin yang boleh edit marbot lain
+        if (! $request->user()->is_super_admin && $request->user()->id !== $marbot->id) {
+            return response()->json(['message' => 'Akses ditolak.'], 403);
+        }
+
         $request->validate([
             'nama_marbot' => ['required', 'string', 'max:150'],
             'email'       => ['required', 'email', Rule::unique('marbots')->ignore($marbot->id)],
             'aktif'       => ['boolean'],
         ]);
 
-        $marbot->update($request->only(['nama_marbot', 'email', 'aktif']));
+        // Non-super admin tidak boleh mengubah status aktif
+        $data = $request->only(['nama_marbot', 'email']);
+        if ($request->user()->is_super_admin) {
+            $data['aktif'] = $request->input('aktif', $marbot->aktif);
+        }
+
+        $marbot->update($data);
 
         return response()->json([
             'message' => 'Data Marbot berhasil diperbarui.',
@@ -114,22 +111,21 @@ class MarbotController extends Controller
 
     // =========================================================================
     // DESTROY – DELETE /api/v1/marbot/{marbot}
-    // Nonaktifkan akun marbot (soft-delete via kolom aktif).
-    // Marbot tidak bisa menonaktifkan akunnya sendiri.
+    // Hanya super admin yang boleh menonaktifkan marbot lain.
     // =========================================================================
     public function destroy(Request $request, Marbot $marbot): JsonResponse
     {
-        // Cegah marbot menghapus/menonaktifkan diri sendiri
-        if ($request->user()->id === $marbot->id) {
-            return response()->json([
-                'message' => 'Tidak dapat menonaktifkan akun sendiri.',
-            ], 422);
+        // Hanya super admin yang boleh nonaktifkan
+        if (! $request->user()->is_super_admin) {
+            return response()->json(['message' => 'Akses ditolak. Hanya super admin yang dapat menonaktifkan akun.'], 403);
         }
 
-        // Nonaktifkan, bukan hapus, agar riwayat peminjaman tetap terjaga
-        $marbot->update(['aktif' => false]);
+        // Super admin tidak bisa menonaktifkan dirinya sendiri
+        if ($request->user()->id === $marbot->id) {
+            return response()->json(['message' => 'Tidak dapat menonaktifkan akun sendiri.'], 422);
+        }
 
-        // Cabut semua token aktif agar marbot tersebut otomatis logout
+        $marbot->update(['aktif' => false]);
         $marbot->tokens()->delete();
 
         return response()->json([
@@ -139,7 +135,6 @@ class MarbotController extends Controller
 
     // =========================================================================
     // UPDATE PROFILE – PUT /api/v1/marbot/profile
-    // Marbot edit profil sendiri (nama, email, password opsional).
     // =========================================================================
     public function updateProfile(Request $request): JsonResponse
     {
@@ -151,13 +146,12 @@ class MarbotController extends Controller
         }
 
         $request->validate([
-            'nama_marbot'      => ['required', 'string', 'max:150'],
-            'email'            => ['required', 'email', Rule::unique('marbots')->ignore($marbot->id)],
-            'password_lama'    => ['nullable', 'string'],         // Wajib jika ingin ganti password
-            'password'         => ['nullable', 'string', 'min:8', 'confirmed'],
+            'nama_marbot'   => ['required', 'string', 'max:150'],
+            'email'         => ['required', 'email', Rule::unique('marbots')->ignore($marbot->id)],
+            'password_lama' => ['nullable', 'string'],
+            'password'      => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
-        // Jika ingin ganti password, verifikasi password lama dahulu
         if ($request->filled('password')) {
             if (! $request->filled('password_lama') || ! Hash::check($request->password_lama, $marbot->password)) {
                 return response()->json([
@@ -175,18 +169,21 @@ class MarbotController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Profil Anda berhasil diperbarui.',
-            'data'    => $marbot->only(['id', 'nama_marbot', 'email', 'aktif']),
+            'data'    => $marbot->only(['id', 'nama_marbot', 'email', 'aktif', 'is_super_admin']),
         ]);
     }
 
     // =========================================================================
     // RESET PASSWORD – POST /api/v1/marbot/{marbot}/reset-password
-    // Reset password marbot oleh admin (tanpa perlu password lama).
+    // Hanya super admin yang boleh reset password marbot lain.
     // =========================================================================
     public function resetPassword(Request $request, Marbot $marbot): JsonResponse
     {
-        // Admin tidak boleh reset password diri sendiri lewat endpoint ini;
-        // gunakan updateProfile untuk itu.
+        // Hanya super admin yang boleh reset password orang lain
+        if (! $request->user()->is_super_admin) {
+            return response()->json(['message' => 'Akses ditolak. Hanya super admin yang dapat mereset password.'], 403);
+        }
+
         if ($request->user()->id === $marbot->id) {
             return response()->json([
                 'message' => 'Gunakan fitur "Ubah Password" di halaman profil untuk mengubah password Anda sendiri.',
@@ -198,8 +195,6 @@ class MarbotController extends Controller
         ]);
 
         $marbot->update(['password' => Hash::make($request->password_baru)]);
-
-        // Cabut semua token aktif agar marbot re-login dengan password baru
         $marbot->tokens()->delete();
 
         return response()->json([

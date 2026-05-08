@@ -206,7 +206,6 @@ async function handleSubmit() {
 .form-layout {
     display: grid;
     grid-template-columns: 1fr;
-    max-width: 520px;
 }
 
 .form-card {

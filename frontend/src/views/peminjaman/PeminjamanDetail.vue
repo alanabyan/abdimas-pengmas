@@ -66,10 +66,6 @@
                             <span class="field-label">Keperluan</span>
                             <span class="field-value">{{ p.keperluan }}</span>
                         </div>
-                        <div v-if="p.catatan" class="field full">
-                            <span class="field-label">Catatan</span>
-                            <span class="field-value muted">{{ p.catatan }}</span>
-                        </div>
                     </div>
                 </div>
 
@@ -99,13 +95,13 @@
                                     </div>
                                 </div>
                             </div>
-                            <template v-if="p.tgl_kembali">
+                            <template v-if="p.tgl_kembali_aktual">
                                 <div class="tl-line"></div>
                                 <div class="tl-item">
                                     <div class="tl-dot purple"></div>
                                     <div>
                                         <div class="tl-label">Tanggal Dikembalikan</div>
-                                        <div class="tl-val">{{ fmtDate(p.tgl_kembali) }}</div>
+                                        <div class="tl-val">{{ fmtDate(p.tgl_kembali_aktual) }}</div>
                                     </div>
                                 </div>
                             </template>
@@ -125,6 +121,7 @@
                                 </svg>
                                 Konfirmasi Peminjaman
                             </button>
+
                             <!-- Edit -->
                             <router-link v-if="p.status === 'Menunggu'" :to="`/peminjaman/${p.id}/edit`"
                                 class="act-full act-yellow">
@@ -134,6 +131,7 @@
                                 </svg>
                                 Edit Peminjaman
                             </router-link>
+
                             <!-- Batal -->
                             <button v-if="p.status === 'Menunggu' || p.status === 'Aktif'" class="act-full act-red"
                                 :disabled="actionLoading" @click="showBatal = true">
@@ -144,29 +142,31 @@
                                 </svg>
                                 Batalkan Peminjaman
                             </button>
-                            <!-- Info selesai/batal -->
-                            <div v-if="p.status === 'Selesai' || p.status === 'Batal'" class="act-info">
+
+                            <!-- Info selesai/batal/rusak-hilang -->
+                            <div v-if="['Selesai', 'Batal', 'Rusak/Hilang'].includes(p.status)" class="act-info">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="10" />
                                     <line x1="12" y1="8" x2="12" y2="12" />
                                     <line x1="12" y1="16" x2="12.01" y2="16" />
                                 </svg>
-                                Peminjaman sudah {{ p.status === 'Selesai' ? 'selesai' : 'dibatalkan' }}, tidak ada aksi
-                                yang tersedia.
+                                Peminjaman sudah
+                                {{ p.status === 'Selesai' ? 'selesai' : p.status === 'Batal' ? 'dibatalkan' : 'ditandai rusak/hilang' }},
+                                tidak ada aksi yang tersedia.
                             </div>
                         </div>
                     </div>
 
-                    <!-- Info kondisi pengembalian jika ada -->
+                    <!-- Info kondisi pengembalian jika sudah ada -->
                     <div v-if="p.kondisi_kembali" class="side-card">
                         <h3 class="side-title">Kondisi Pengembalian</h3>
                         <div class="field">
                             <span class="field-label">Kondisi</span>
                             <span class="field-value">{{ p.kondisi_kembali }}</span>
                         </div>
-                        <div v-if="p.catatan_kembali" class="field" style="margin-top: 10px;">
+                        <div v-if="p.catatan" class="field" style="margin-top: 10px;">
                             <span class="field-label">Catatan</span>
-                            <span class="field-value muted">{{ p.catatan_kembali }}</span>
+                            <span class="field-value muted">{{ p.catatan }}</span>
                         </div>
                     </div>
                 </div>
@@ -301,7 +301,6 @@ onMounted(() => store.fetchPeminjaman(route.params.id))
     min-height: 100vh;
     background: #F4F6F9;
     color: #1a1f2e;
-    max-width: 1100px;
 }
 
 .back-row {
@@ -526,7 +525,7 @@ onMounted(() => store.fetchPeminjaman(route.params.id))
     margin-left: 4px;
 }
 
-/* Action buttons full width */
+/* Action buttons */
 .action-list {
     display: flex;
     flex-direction: column;
@@ -656,7 +655,7 @@ onMounted(() => store.fetchPeminjaman(route.params.id))
     padding: 80px 24px;
 }
 
-/* Reused modal/toast styles */
+/* Modal */
 .modal-backdrop {
     position: fixed;
     inset: 0;
@@ -745,6 +744,10 @@ onMounted(() => store.fetchPeminjaman(route.params.id))
     color: #7a8499;
     cursor: pointer;
     font-family: inherit;
+}
+
+.btn-cancel:hover {
+    border-color: #c4ccdb;
 }
 
 .btn-submit {
