@@ -90,7 +90,12 @@
 
             <!-- Jumlah -->
             <td>
-              <span class="qty-badge">{{ item.jumlah }}</span>
+              <div class="qty-cell">
+                <span class="qty-badge">{{ item.jumlah }}</span>
+                <span v-if="item.status === 'Sebagian Kembali' && item.jumlah_kembali" class="qty-partial">
+                  {{ item.jumlah_kembali }}/{{ item.jumlah }} kembali
+                </span>
+              </div>
             </td>
 
             <!-- Tgl Pinjam -->
@@ -265,6 +270,20 @@ onMounted(fetchData)
   font-size: 13px;
   color: #7a8499;
   margin: 2px 0 0;
+}
+
+.qty-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.qty-partial {
+  font-size: 11px;
+  color: #d97706;
+  font-weight: 600;
+  font-family: 'DM Mono', monospace;
 }
 
 /* ── Stats ── */

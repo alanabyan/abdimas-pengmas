@@ -48,12 +48,26 @@
                     <div class="fields-grid">
                         <div class="field">
                             <span class="field-label">Barang</span>
-                            <span class="field-value">{{ p.barang?.nama_barang ?? p.barang?.nama ?? '-' }}</span>
+                            <span class="field-value">{{ p.barang?.nama_barang ?? '-' }}</span>
                         </div>
                         <div class="field">
                             <span class="field-label">Jumlah Pinjam</span>
                             <span class="field-value mono">{{ p.jumlah }} unit</span>
                         </div>
+
+                        <!-- Tambahan: jumlah kembali jika ada -->
+                        <div v-if="p.jumlah_kembali" class="field">
+                            <span class="field-label">Sudah Dikembalikan</span>
+                            <span class="field-value mono"
+                                :class="p.jumlah_kembali < p.jumlah ? 'text-amber' : 'text-green'">
+                                {{ p.jumlah_kembali }} / {{ p.jumlah }} unit
+                            </span>
+                        </div>
+                        <div v-if="p.jumlah_kembali && p.jumlah_kembali < p.jumlah" class="field">
+                            <span class="field-label">Sisa Belum Kembali</span>
+                            <span class="field-value mono text-red">{{ p.jumlah - p.jumlah_kembali }} unit</span>
+                        </div>
+
                         <div class="field">
                             <span class="field-label">Kondisi Barang</span>
                             <span class="field-value">{{ p.kondisi_pinjam ?? '-' }}</span>
@@ -143,6 +157,20 @@
                                 Batalkan Peminjaman
                             </button>
 
+                            <!-- Info Sebagian Kembali -->
+                            <div v-if="p.status === 'Sebagian Kembali'" class="act-info act-info--amber">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                <span>
+                                    {{ p.jumlah_kembali }} dari {{ p.jumlah }} unit sudah dikembalikan.
+                                    Masih ada <strong>{{ p.jumlah - p.jumlah_kembali }} unit</strong> yang belum
+                                    dikembalikan.
+                                </span>
+                            </div>
+
                             <!-- Info selesai/batal/rusak-hilang -->
                             <div v-if="['Selesai', 'Batal', 'Rusak/Hilang'].includes(p.status)" class="act-info">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -158,10 +186,23 @@
                     </div>
 
                     <!-- Info kondisi pengembalian jika sudah ada -->
-                    <div v-if="p.kondisi_kembali" class="side-card">
+                    <div v-if="p.kondisi_kembali || p.jumlah_kembali" class="side-card">
                         <h3 class="side-title">Kondisi Pengembalian</h3>
-                        <div class="field">
-                            <span class="field-label">Kondisi</span>
+
+                        <!-- Progress bar jika sebagian -->
+                        <div v-if="p.status === 'Sebagian Kembali'" class="return-progress">
+                            <div class="return-progress-bar-wrap">
+                                <div class="return-progress-bar-fill"
+                                    :style="{ width: Math.round((p.jumlah_kembali / p.jumlah) * 100) + '%' }">
+                                </div>
+                            </div>
+                            <span class="return-progress-pct">
+                                {{ Math.round((p.jumlah_kembali / p.jumlah) * 100) }}% dikembalikan
+                            </span>
+                        </div>
+
+                        <div v-if="p.kondisi_kembali" class="field" style="margin-top: 10px;">
+                            <span class="field-label">Kondisi Terakhir</span>
                             <span class="field-value">{{ p.kondisi_kembali }}</span>
                         </div>
                         <div v-if="p.catatan" class="field" style="margin-top: 10px;">
@@ -242,8 +283,9 @@ const wargaNama = computed(() => p.value?.warga?.nama_warga ?? p.value?.warga?.n
 
 // Overdue check
 const isOverdue = computed(() => {
-    if (!p.value || p.value.status !== 'Aktif' || !p.value.tgl_rencana_kembali) return false
-    return new Date(p.value.tgl_rencana_kembali) < new Date()
+    if (!p.value) return false
+    if (!['Aktif', 'Terlambat', 'Sebagian Kembali'].includes(p.value.status)) return false
+    return p.value.tgl_rencana_kembali && new Date(p.value.tgl_rencana_kembali) < new Date()
 })
 const overdueDay = computed(() => {
     if (!isOverdue.value) return 0
@@ -450,6 +492,67 @@ onMounted(() => store.fetchPeminjaman(route.params.id))
     text-transform: uppercase;
     letter-spacing: .5px;
     margin: 0 0 16px;
+}
+
+/* Peminjaman.vue */
+.qty-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.qty-partial {
+    font-size: 11px;
+    color: #d97706;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+}
+
+/* PeminjamanDetail.vue */
+.text-amber {
+    color: #d97706;
+}
+
+.text-green {
+    color: #16a34a;
+}
+
+.text-red {
+    color: #dc2626;
+}
+
+.act-info--amber {
+    background: #fffbeb;
+    border: 1px solid #16a34a;
+    color: #92400e;
+    border-radius: 8px;
+}
+
+.return-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.return-progress-bar-wrap {
+    width: 100%;
+    height: 6px;
+    background: #fef3c7;
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.return-progress-bar-fill {
+    height: 100%;
+    background: #16a34a;
+    border-radius: 99px;
+    transition: width 0.4s ease;
+}
+
+.return-progress-pct {
+    font-size: 12px;
+    font-weight: 600;
+    color: #16a34a;
 }
 
 /* Timeline */

@@ -99,18 +99,25 @@
             <td>
               <div class="person-cell">
                 <div class="avatar" :style="{ background: avatarColor(p.warga?.nama_warga ?? p.warga?.nama) }">
-                  {{ initials(p.warga?.nama_warga ?? p.warga?.nama) }}
+                  {{ initials(p.warga?.nama_warga ?? p.warga?.nama_warga) }}
                 </div>
                 <div>
-                  <div class="person-name">{{ p.warga?.nama_warga ?? p.warga?.nama ?? '-' }}</div>
+                  <div class="person-name">{{ p.warga?.nama_warga ?? p.warga?.nama_warga ?? '-' }}</div>
                   <div class="person-sub">{{ p.warga?.no_hp ?? '' }}</div>
                 </div>
               </div>
             </td>
             <td>
-              <div class="barang-name">{{ p.barang?.nama_barang ?? p.barang?.nama ?? '-' }}</div>
+              <div class="barang-name">{{ p.barang?.nama_barang ?? p.barang?.nama_barang ?? '-' }}</div>
             </td>
-            <td><span class="qty-badge">{{ p.jumlah }}</span></td>
+            <td>
+              <div class="qty-cell">
+                <span class="qty-badge">{{ p.jumlah }}</span>
+                <span v-if="p.status === 'Sebagian Kembali' && p.jumlah_kembali" class="qty-partial">
+                  {{ p.jumlah_kembali }}/{{ p.jumlah }} kembali
+                </span>
+              </div>
+            </td>
             <td><span class="date-text">{{ fmtDate(p.tgl_pinjam) }}</span></td>
             <td>
               <span class="date-text" :class="{ overdue: isOverdue(p) }">
@@ -185,8 +192,9 @@
                 </svg>
               </div>
               <h3 class="confirm-title">Batalkan Peminjaman?</h3>
-              <p class="confirm-desc">Peminjaman <strong>{{ batalTarget?.warga?.nama_warga ?? batalTarget?.warga?.nama
-              }}</strong> akan dibatalkan dan stok dikembalikan.</p>
+              <p class="confirm-desc">Peminjaman <strong>{{ batalTarget?.warga?.nama_warga ??
+                batalTarget?.warga?.nama_warga
+                  }}</strong> akan dibatalkan dan stok dikembalikan.</p>
               <div class="modal-footer">
                 <button class="btn-cancel" @click="showBatal = false">Tidak</button>
                 <button class="btn-submit btn-danger" :disabled="actionLoading" @click="submitBatal">
@@ -250,22 +258,25 @@ const stats = computed(() => [
   { label: 'Menunggu', value: store.allPeminjamans.filter(p => p.status === 'Menunggu').length, color: '#d97706' },
   { label: 'Aktif', value: store.allPeminjamans.filter(p => p.status === 'Aktif' && !isOverdue(p)).length, color: '#16a34a' },
   { label: 'Telat', value: store.allPeminjamans.filter(p => isOverdue(p)).length, color: '#dc2626' },
+  { label: 'Sebagian', value: store.allPeminjamans.filter(p => p.status === 'Sebagian Kembali').length, color: '#f59e0b' },
   { label: 'Selesai', value: store.allPeminjamans.filter(p => p.status === 'Selesai').length, color: '#6366f1' },
   { label: 'Rusak/Hilang', value: store.allPeminjamans.filter(p => p.status === 'Rusak/Hilang').length, color: '#c2410c' },
   { label: 'Batal', value: store.allPeminjamans.filter(p => p.status === 'Batal').length, color: '#64748b' },
 ])
 
+// Tambah 'Sebagian Kembali' di statusOptions
 const statusOptions = [
   { label: 'Semua', value: '', color: '#94a3b8' },
   { label: 'Menunggu', value: 'Menunggu', color: '#d97706' },
   { label: 'Aktif', value: 'Aktif', color: '#16a34a' },
   { label: 'Telat', value: 'Telat', color: '#dc2626' },
+  { label: 'Sebagian Kembali', value: 'Sebagian Kembali', color: '#f59e0b' },
   { label: 'Selesai', value: 'Selesai', color: '#6366f1' },
   { label: 'Rusak/Hilang', value: 'Rusak/Hilang', color: '#c2410c' },
   { label: 'Batal', value: 'Batal', color: '#64748b' },
 ]
 
-// ── Filter ────────────────────────────────────────────────────────────────
+// filteredPeminjamans — tambah case 'Sebagian Kembali'
 const filteredPeminjamans = computed(() => {
   let list = store.peminjamans
 
@@ -290,14 +301,12 @@ const filteredPeminjamans = computed(() => {
   return list
 })
 
-// ── Fetch ─────────────────────────────────────────────────────────────────
+// doFetch — tambah 'Sebagian Kembali' dikirim langsung ke backend
 function doFetch(page = 1) {
   const params = { page, per_page: 15 }
   if (filters.value.status === 'Telat' || filters.value.status === 'Aktif') {
-    // Telat = Aktif di backend, overdue difilter frontend
     params.status = 'Aktif'
   } else if (filters.value.status) {
-    // Rusak/Hilang, Selesai, Batal, Menunggu — kirim langsung ke backend
     params.status = filters.value.status
   }
   if (filters.value.search) params.search = filters.value.search
@@ -324,7 +333,7 @@ async function handleKonfirmasi(p) {
   actionLoading.value = p.id
   try {
     await store.konfirmasiPeminjaman(p.id)
-    showToast('success', `Peminjaman ${p.warga?.nama_warga ?? p.warga?.nama} berhasil dikonfirmasi.`)
+    showToast('success', `Peminjaman ${p.warga?.nama_warga ?? p.warga?.nama_warga} berhasil dikonfirmasi.`)
   } catch (e) {
     showToast('error', e?.response?.data?.message ?? 'Gagal mengonfirmasi.')
   } finally { actionLoading.value = null }
@@ -435,6 +444,20 @@ onMounted(() => {
   gap: 14px;
   margin-bottom: 20px;
   flex-wrap: wrap;
+}
+
+.qty-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.qty-partial {
+  font-size: 11px;
+  color: #d97706;
+  font-weight: 600;
+  font-family: 'DM Mono', monospace;
 }
 
 .stat-card {

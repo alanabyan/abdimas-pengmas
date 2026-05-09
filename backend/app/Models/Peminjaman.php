@@ -19,11 +19,13 @@ class Peminjaman extends Model
     const STATUS_TERLAMBAT   = 'Terlambat';
     const STATUS_BATAL       = 'Batal';
     const STATUS_RUSAK_HILANG = 'Rusak/Hilang';
+    const STATUS_SEBAGIAN_KEMBALI = 'Sebagian Kembali';
 
     const STATUS_AKTIF_LIST = [
         self::STATUS_MENUNGGU,
         self::STATUS_AKTIF,
         self::STATUS_TERLAMBAT,
+        self::STATUS_SEBAGIAN_KEMBALI,
     ];
 
     protected $fillable = [
@@ -32,6 +34,7 @@ class Peminjaman extends Model
         'marbot_id',
         'keperluan',
         'jumlah',
+        'jumlah_kembali',
         'kondisi_pinjam',
         'tgl_pinjam',
         'tgl_rencana_kembali',
@@ -43,6 +46,7 @@ class Peminjaman extends Model
 
     protected $casts = [
         'jumlah'              => 'integer',
+        'jumlah_kembali'      => 'integer',
         'tgl_pinjam'          => 'date',
         'tgl_rencana_kembali' => 'date',
         'tgl_kembali_aktual'  => 'date',

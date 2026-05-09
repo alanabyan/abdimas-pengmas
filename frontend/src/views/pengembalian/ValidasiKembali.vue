@@ -44,11 +44,37 @@
               <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
             </svg>
             <span class="info-label">Barang</span>
-            <span class="info-val">
-              {{ dataPinjam?.barang?.nama_barang || 'Barang Terhapus' }}
-              <span class="info-qty">({{ dataPinjam?.jumlah }} unit)</span>
-            </span>
+            <span class="info-val">{{ dataPinjam?.barang?.nama_barang || 'Barang Terhapus' }}</span>
           </div>
+        </div>
+
+        <!-- Progress pengembalian jika sudah ada sebagian -->
+        <div v-if="sudahKembali > 0" class="progress-card">
+          <div class="progress-header">
+            <span class="progress-label">Progress Pengembalian</span>
+            <span class="progress-frac">{{ sudahKembali }} / {{ dataPinjam.jumlah }} unit</span>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" :style="{ width: progressPct + '%' }"></div>
+          </div>
+          <p class="progress-hint">Sisa <strong>{{ sisaBelum }} unit</strong> belum dikembalikan</p>
+        </div>
+
+        <!-- Jumlah dikembalikan -->
+        <div class="field-group">
+          <label class="field-label">Jumlah Dikembalikan Sekarang</label>
+          <div class="jumlah-wrapper">
+            <button type="button" class="jumlah-btn" :disabled="form.jumlah_kembali <= 1" @click="kurang">−</button>
+            <input type="number" v-model.number="form.jumlah_kembali" :min="1" :max="sisaBelum" class="jumlah-input" />
+            <button type="button" class="jumlah-btn" :disabled="form.jumlah_kembali >= sisaBelum"
+              @click="tambah">+</button>
+          </div>
+          <p class="jumlah-hint">
+            <span>Maks: <strong>{{ sisaBelum }} unit</strong></span>
+            <span v-if="form.jumlah_kembali < sisaBelum" class="sisa-badge">
+              Sisa {{ sisaBelum - form.jumlah_kembali }} unit akan tetap tercatat sebagai tanggungan
+            </span>
+          </p>
         </div>
 
         <!-- Kondisi selector -->
@@ -64,7 +90,6 @@
             </button>
           </div>
 
-          <!-- Deskripsi kondisi yang dipilih -->
           <transition name="fade">
             <div v-if="selectedOption" class="kondisi-desc" :class="`kondisi-desc--${selectedOption.color}`">
               {{ selectedOption.desc }}
@@ -97,9 +122,7 @@
 
       <!-- Footer -->
       <div class="modal-footer">
-        <button type="button" class="btn-batal" @click="$emit('close')">
-          Batal
-        </button>
+        <button type="button" class="btn-batal" @click="$emit('close')">Batal</button>
         <button type="button" class="btn-simpan" :disabled="loading || !canSubmit" @click="submitValidasi">
           <svg v-if="loading" class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
             stroke-linecap="round" width="15" height="15">
@@ -118,7 +141,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import api from '@/services/api'
 
 const props = defineProps({
@@ -135,7 +158,44 @@ const submitted = ref(false)
 const form = reactive({
   kondisi_kembali: 'Baik',
   catatan: '',
+  jumlah_kembali: 1,
 })
+
+// Sudah dikembalikan sebelumnya (dari pengembalian parsial sebelumnya)
+const sudahKembali = computed(() => props.dataPinjam?.jumlah_kembali ?? 0)
+
+// Sisa yang belum dikembalikan = total pinjam - yang sudah kembali
+const sisaBelum = computed(() => (props.dataPinjam?.jumlah ?? 0) - sudahKembali.value)
+
+// Progress bar percentage
+const progressPct = computed(() => {
+  if (!props.dataPinjam?.jumlah) return 0
+  return Math.round((sudahKembali.value / props.dataPinjam.jumlah) * 100)
+})
+
+// Reset form setiap kali dataPinjam berubah
+watch(
+  () => props.dataPinjam,
+  (val) => {
+    if (val) {
+      form.jumlah_kembali = sisaBelum.value
+      form.kondisi_kembali = 'Baik'
+      form.catatan = ''
+      submitted.value = false
+    }
+  },
+  { immediate: true }
+)
+
+// Jaga jumlah tetap dalam batas saat diketik manual
+watch(
+  () => form.jumlah_kembali,
+  (val) => {
+    const max = sisaBelum.value
+    if (!val || val < 1) form.jumlah_kembali = 1
+    if (val > max) form.jumlah_kembali = max
+  }
+)
 
 const kondisiOptions = [
   {
@@ -143,7 +203,7 @@ const kondisiOptions = [
     label: 'Baik / Lengkap',
     icon: '✅',
     color: 'baik',
-    desc: 'Semua barang kembali dalam kondisi lengkap dan baik.',
+    desc: 'Barang kembali dalam kondisi lengkap dan baik.',
   },
   {
     value: 'Rusak Ringan',
@@ -164,7 +224,7 @@ const kondisiOptions = [
     label: 'Hilang',
     icon: '❌',
     color: 'hilang',
-    desc: 'Barang tidak bisa dikembalikan. Stok tidak akan dipulihkan.',
+    desc: 'Barang tidak bisa dikembalikan. Stok total akan dikurangi permanen.',
   },
 ]
 
@@ -192,12 +252,17 @@ const catatanPlaceholder = computed(() => {
   }
 })
 
+function tambah() {
+  if (form.jumlah_kembali < sisaBelum.value) form.jumlah_kembali++
+}
+
+function kurang() {
+  if (form.jumlah_kembali > 1) form.jumlah_kembali--
+}
+
 function selectKondisi(value) {
   form.kondisi_kembali = value
-  // Reset catatan kalau kembali ke Baik
-  if (value === 'Baik') {
-    submitted.value = false
-  }
+  if (value === 'Baik') submitted.value = false
 }
 
 const submitValidasi = async () => {
@@ -209,6 +274,7 @@ const submitValidasi = async () => {
   try {
     const response = await api.post(`/pengembalian/${props.dataPinjam.id}`, {
       kondisi_kembali: form.kondisi_kembali,
+      jumlah_kembali: form.jumlah_kembali,
       catatan: form.catatan || null,
     })
 
@@ -311,7 +377,9 @@ const submitValidasi = async () => {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
+  max-height: 75vh;
+  overflow-y: auto;
 }
 
 /* Info card */
@@ -347,10 +415,57 @@ const submitValidasi = async () => {
   font-weight: 600;
 }
 
-.info-qty {
-  color: #9ca3af;
-  font-weight: 400;
+/* Progress card */
+.progress-card {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.progress-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.progress-frac {
+  font-size: 13px;
+  font-weight: 700;
+  color: #92400e;
+  font-family: monospace;
+}
+
+.progress-bar-wrap {
+  width: 100%;
+  height: 6px;
+  background: #fef3c7;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #d97706;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.progress-hint {
   font-size: 12px;
+  color: #92400e;
+  margin: 0;
 }
 
 /* Field group */
@@ -380,6 +495,90 @@ const submitValidasi = async () => {
   border-radius: 4px;
   text-transform: none;
   letter-spacing: 0;
+}
+
+/* Jumlah control */
+.jumlah-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jumlah-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  background: white;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #374151;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.jumlah-btn:hover:not(:disabled) {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #16a34a;
+}
+
+.jumlah-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.jumlah-input {
+  flex: 1;
+  text-align: center;
+  padding: 7px 8px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -moz-appearance: textfield;
+}
+
+.jumlah-input::-webkit-inner-spin-button,
+.jumlah-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+.jumlah-input:focus {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.jumlah-hint {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.jumlah-hint strong {
+  color: #6b7280;
+}
+
+.sisa-badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 2px 7px;
+  border-radius: 4px;
 }
 
 /* Kondisi grid */
@@ -425,7 +624,6 @@ const submitValidasi = async () => {
   font-weight: 700;
 }
 
-/* Kondisi color variants */
 .kondisi-btn--baik:hover {
   border-color: #86efac;
   background: #f0fdf4;
@@ -486,7 +684,6 @@ const submitValidasi = async () => {
   color: #dc2626;
 }
 
-/* Kondisi desc */
 .kondisi-desc {
   font-size: 12px;
   padding: 9px 12px;
@@ -614,7 +811,6 @@ const submitValidasi = async () => {
   box-shadow: none;
 }
 
-/* Spinner */
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -625,7 +821,6 @@ const submitValidasi = async () => {
   animation: spin 0.7s linear infinite;
 }
 
-/* Transition */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s, transform 0.2s;
