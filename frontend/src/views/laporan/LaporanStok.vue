@@ -110,7 +110,7 @@
 
             <div class="laporan-footer shadow-sm">
                 <p>Laporan dibuat pada: <strong>{{ now }}</strong></p>
-                <p>Data bersumber dari sistem inventaris SIMBA v2.0</p>
+                <p>Data bersumber dari sistem inventaris Masjid Ar-Rayyan</p>
             </div>
         </template>
     </div>

@@ -130,7 +130,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // Set judul tab browser secara dinamis
-  document.title = to.meta.title ? `${to.meta.title} — SIMBA` : 'SIMBA'
+  document.title = to.meta.title ? `${to.meta.title} Masjid Ar-Rayyan` : 'Masjid Ar-Rayyan'
   next()
 })
 

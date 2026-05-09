@@ -73,7 +73,7 @@ onMounted(() => {
 
             <div class="flex items-center gap-3 px-4 py-5 ">
                 <div>
-                    <p class="text-[#064E3B] text-sm font-extrabold">SIMBA v2.0</p>
+                    <p class="text-[#064E3B] text-sm font-extrabold">Masjid Ar-Rayyan</p>
                     <p class="text-[9px] text-slate-400 uppercase tracking-wider">
                         Sistem Inventaris Masjid
                     </p>
