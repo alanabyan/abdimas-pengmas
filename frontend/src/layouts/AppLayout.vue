@@ -75,7 +75,7 @@ onMounted(() => {
 
             <div class="flex items-center gap-3 px-4 py-5 ">
                 <div>
-                    <p class="text-[#064E3B] text-sm font-extrabold">Mas Rayyan</p>
+                    <p class="text-[#064E3B] text-sm font-extrabold">SI MAS RAYYAN</p>
                     <p class="text-[9px] text-slate-400 uppercase tracking-wider">
                         Sistem Inventaris Masjid
                     </p>
