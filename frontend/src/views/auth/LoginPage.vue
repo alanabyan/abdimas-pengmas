@@ -8,7 +8,7 @@
                 </div>
             </div>
 
-            <h1 class="text-center text-[22px] font-extrabold text-masjid-900 tracking-tight mb-1">Masjid Ar-Rayyan</h1>
+            <h1 class="text-center text-[22px] font-extrabold text-masjid-900 tracking-tight mb-1">Mas Rayyan</h1>
             <p class="text-center text-[10px] font-semibold text-gray-500 tracking-[1.8px] uppercase mb-4">MARBOT ACCESS
                 PORTAL</p>
 
