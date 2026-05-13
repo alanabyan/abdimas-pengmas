@@ -40,14 +40,7 @@ Route::prefix('v1')->group(function () {
         Route::patch('notifikasi/{notifikasi}/baca', [NotifikasiController::class, 'tandaiBaca']);
         Route::delete('notifikasi/{notifikasi}', [NotifikasiController::class, 'destroy']);
 
-        // --- Fitur Laporan ---
-        Route::get('laporan/peminjaman', [LaporanController::class, 'peminjaman']);
-        Route::get('laporan/kerusakan', [LaporanController::class, 'kerusakan']);
-        Route::get('laporan/stok', [LaporanController::class, 'stok']);
-        Route::get('laporan/peminjaman/pdf', [LaporanController::class, 'peminjamanPdf']);
-        Route::get('laporan/kerusakan/pdf', [LaporanController::class, 'kerusakanPdf']);
-        Route::get('laporan/tren-peminjaman', [LaporanController::class, 'trenPeminjaman']);
-
+        
         // --- Fitur Barang ---
         Route::post('barang/{barang}/foto', [BarangController::class, 'uploadFoto']);
         Route::delete('barang/{barang}/foto', [BarangController::class, 'hapusFoto']);
@@ -76,6 +69,13 @@ Route::prefix('v1')->group(function () {
 
         // --- Konfirmasi Peminjaman ---
         Route::patch('peminjaman/{peminjaman}/konfirmasi', [PeminjamanController::class, 'konfirmasi'])
-            ->name('peminjaman.konfirmasi');
-    });
+        ->name('peminjaman.konfirmasi');
+        });
+        // --- Fitur Laporan ---
+        Route::get('laporan/peminjaman', [LaporanController::class, 'peminjaman']);
+        Route::get('laporan/kerusakan', [LaporanController::class, 'kerusakan']);
+        Route::get('laporan/stok', [LaporanController::class, 'stok']);
+        Route::get('laporan/peminjaman/pdf', [LaporanController::class, 'peminjamanPdf']);
+        Route::get('laporan/kerusakan/pdf', [LaporanController::class, 'kerusakanPdf']);
+        Route::get('laporan/tren-peminjaman', [LaporanController::class, 'trenPeminjaman']);
 });

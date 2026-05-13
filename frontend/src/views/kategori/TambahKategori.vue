@@ -12,26 +12,36 @@
                     Kembali
                 </RouterLink>
                 <div>
-                    <h1 class="pg-title">{{ isEdit ? 'Edit Kategori' : 'Tambah Kategori' }}</h1>
+                    <h1 class="pg-title">
+                        <span v-if="isEdit" class="pg-title__badge pg-title__badge--edit">Edit</span>
+                        <span v-else class="pg-title__badge pg-title__badge--add">Baru</span>
+                        {{ isEdit ? 'Edit Kategori' : 'Tambah Kategori' }}
+                    </h1>
                     <p class="pg-sub">
                         {{ isEdit
-                            ? 'Perbarui informasi kategori barang.'
-                            : 'Buat kategori baru untuk mengelompokkan barang.' }}
+                            ? 'Perbarui informasi kategori barang inventaris masjid.'
+                            : 'Buat kategori baru untuk mengelompokkan barang inventaris.' }}
                     </p>
                 </div>
             </div>
         </div>
 
-        <!-- Loading -->
+        <!-- ── Loading ────────────────────────────────────────────────── -->
         <div v-if="loadingData" class="loading-state">
-            <div class="loading-spinner"></div>
+            <div class="loading-ring">
+                <svg viewBox="0 0 50 50" width="40" height="40">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="#e5e7eb" stroke-width="4" />
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="#16a34a" stroke-width="4"
+                        stroke-dasharray="31.4 94.2" stroke-linecap="round" class="ring-spin" />
+                </svg>
+            </div>
             <p>Memuat data kategori...</p>
         </div>
 
-        <!-- ── Content grid ────────────────────────────────────────────── -->
+        <!-- ── Content grid ───────────────────────────────────────────── -->
         <div v-else class="content-grid">
 
-            <!-- LEFT: Form ───────────────────────────────────────────────── -->
+            <!-- LEFT: Form ───────────────────────────────────────────── -->
             <div class="form-col">
 
                 <!-- Nama & Deskripsi -->
@@ -55,21 +65,29 @@
                             <label class="field-label">
                                 Nama Kategori <span class="required">*</span>
                             </label>
-                            <input v-model="form.nama" type="text" class="field-input"
-                                :class="{ 'field-input--error': errors.nama }"
-                                placeholder="Contoh: Peralatan Sholat, Perlengkapan Dapur..."
-                                @input="errors.nama = ''" />
+                            <div class="field-input-wrap">
+                                <input v-model="form.nama" type="text" class="field-input"
+                                    :class="{ 'field-input--error': errors.nama }"
+                                    placeholder="Contoh: Peralatan Sholat, Perlengkapan Dapur..."
+                                    @input="errors.nama = ''; isDirty = true" maxlength="100" />
+                                <span class="char-counter" :class="{ 'char-counter--warn': form.nama.length > 80 }">
+                                    {{ form.nama.length }}/100
+                                </span>
+                            </div>
                             <p v-if="errors.nama" class="field-error">{{ errors.nama }}</p>
                         </div>
 
                         <!-- Deskripsi -->
                         <div class="field-group">
-                            <label class="field-label">Deskripsi</label>
+                            <label class="field-label">
+                                Deskripsi
+                                <span class="field-label__opt">Opsional</span>
+                            </label>
                             <textarea v-model="form.deskripsi" class="field-input field-textarea"
-                                placeholder="Keterangan singkat tentang jenis barang dalam kategori ini..."
-                                rows="3"></textarea>
+                                placeholder="Keterangan singkat tentang jenis barang dalam kategori ini..." rows="3"
+                                @input="isDirty = true"></textarea>
                             <p class="field-hint">
-                                Opsional — membantu admin mengenali jenis barang dalam kategori ini.
+                                Membantu admin mengenali jenis barang dalam kategori ini.
                             </p>
                         </div>
                     </div>
@@ -81,19 +99,20 @@
                         <div class="form-card__icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" width="15" height="15">
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                                <line x1="9" y1="9" x2="9.01" y2="9" />
-                                <line x1="15" y1="9" x2="15.01" y2="9" />
+                                <polygon
+                                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                             </svg>
                         </div>
                         <h2 class="form-card__title">Pilih Ikon</h2>
-                        <span class="form-card__badge" v-if="form.ikon">{{ form.ikon }}</span>
+                        <span class="form-card__badge" v-if="form.ikon">
+                            <component :is="getIcon(form.ikon)" width="11" height="11" />
+                            {{ form.ikon }}
+                        </span>
                     </div>
 
                     <div class="form-body">
                         <!-- Preview ikon terpilih -->
-                        <div class="ikon-preview-bar">
+                        <div class="ikon-preview-bar" :class="{ 'ikon-preview-bar--active': form.ikon }">
                             <div class="ikon-preview-box" :style="{
                                 background: itemColor(form.nama || 'x') + '20',
                                 color: itemColor(form.nama || 'x')
@@ -113,9 +132,10 @@
                                     {{ form.ikon ? 'Klik ikon lain untuk ganti' : 'Klik ikon di bawah untuk memilih' }}
                                 </p>
                             </div>
-                            <button v-if="form.ikon" type="button" class="ikon-clear-btn" @click="form.ikon = ''">
+                            <button v-if="form.ikon" type="button" class="ikon-clear-btn"
+                                @click="form.ikon = ''; isDirty = true">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                    stroke-linecap="round" width="12" height="12">
+                                    stroke-linecap="round" width="11" height="11">
                                     <line x1="18" y1="6" x2="6" y2="18" />
                                     <line x1="6" y1="6" x2="18" y2="18" />
                                 </svg>
@@ -139,7 +159,7 @@
                                 <circle cx="11" cy="11" r="8" />
                                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
                             </svg>
-                            <input v-model="ikonSearch" type="text" placeholder="Cari nama ikon Lucide..."
+                            <input v-model="ikonSearch" type="text" placeholder="Cari nama ikon..."
                                 class="search-input" />
                             <button v-if="ikonSearch" class="search-clear" @click="ikonSearch = ''">✕</button>
                         </div>
@@ -147,8 +167,10 @@
                         <!-- Grid ikon -->
                         <div class="ikon-picker-grid" v-if="filteredIkons.length">
                             <button v-for="icon in filteredIkons" :key="icon.name" type="button" class="ikon-pick-btn"
-                                :class="{ 'ikon-pick-btn--active': form.ikon === icon.name }" :title="icon.name"
-                                @click="form.ikon = (form.ikon === icon.name ? '' : icon.name)">
+                                :class="{ 'ikon-pick-btn--active': form.ikon === icon.name }" :title="icon.name" :style="form.ikon === icon.name
+                                    ? { borderColor: itemColor(form.nama || 'x'), color: itemColor(form.nama || 'x'), background: itemColor(form.nama || 'x') + '12' }
+                                    : {}"
+                                @click="form.ikon = (form.ikon === icon.name ? '' : icon.name); isDirty = true">
                                 <component :is="getIcon(icon.name)" width="20" height="20" />
                                 <span>{{ icon.label }}</span>
                             </button>
@@ -166,8 +188,17 @@
 
                 <!-- Action buttons -->
                 <div class="form-actions">
+                    <button v-if="isEdit && isDirty" type="button" class="btn-reset" @click="resetForm"
+                        title="Reset ke data awal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" width="13" height="13">
+                            <polyline points="1 4 1 10 7 10" />
+                            <path d="M3.51 15a9 9 0 1 0 .49-3.27" />
+                        </svg>
+                        Reset
+                    </button>
                     <RouterLink to="/kategori" class="btn-cancel">Batal</RouterLink>
-                    <button class="btn-submit" :disabled="submitting" @click="handleSubmit">
+                    <button class="btn-submit" :disabled="submitting || (isEdit && !isDirty)" @click="handleSubmit">
                         <svg v-if="submitting" class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" width="15" height="15">
                             <path d="M21 12a9 9 0 1 1-6.219-8.56" />
@@ -181,13 +212,14 @@
                 </div>
             </div>
 
-            <!-- RIGHT: Sidebar ───────────────────────────────────────────── -->
+            <!-- RIGHT: Sidebar ───────────────────────────────────────── -->
             <div class="right-col">
 
                 <!-- Preview card -->
                 <div class="preview-section">
                     <p class="section-label">Pratinjau Kartu</p>
-                    <div class="preview-kategori-card">
+                    <div class="preview-kategori-card"
+                        :style="{ borderColor: isDirty ? itemColor(form.nama || 'x') + '40' : '' }">
                         <div class="preview-card-top">
                             <div class="preview-ikon" :style="{
                                 background: itemColor(form.nama || 'x') + '20',
@@ -205,7 +237,7 @@
                             <div class="preview-color-dot" :style="{ background: itemColor(form.nama || 'x') }"></div>
                         </div>
                         <p class="preview-nama">{{ form.nama || 'Nama Kategori' }}</p>
-                        <p class="preview-desc">
+                        <p class="preview-desc" :class="{ 'preview-desc--placeholder': !form.deskripsi }">
                             {{ form.deskripsi || 'Deskripsi kategori akan muncul di sini...' }}
                         </p>
                         <div class="preview-footer">
@@ -219,9 +251,20 @@
                             </span>
                         </div>
                     </div>
+                    <!-- Diff badge jika ada perubahan nama -->
+                    <div v-if="isEdit && isDirty && originalForm.nama !== form.nama" class="diff-note">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" width="11" height="11">
+                            <path d="M9 18V5l12-2v13" />
+                            <circle cx="6" cy="18" r="3" />
+                            <circle cx="18" cy="16" r="3" />
+                        </svg>
+                        Nama diubah dari
+                        <strong>{{ originalForm.nama }}</strong>
+                    </div>
                 </div>
 
-                <!-- Edit mode: info barang yang ada -->
+                <!-- Edit mode: statistik & info barang -->
                 <div class="info-card" v-if="isEdit && currentKategori">
                     <p class="section-label">Statistik Kategori</p>
                     <div class="stat-mini-grid">
@@ -239,12 +282,18 @@
                         </div>
                     </div>
 
+                    <!-- ID info -->
+                    <div class="id-row">
+                        <span class="id-label">ID Kategori</span>
+                        <span class="id-val">#{{ currentKategori.id }}</span>
+                    </div>
+
                     <div v-if="currentKategori.barangs?.length" class="barang-mini-list">
                         <p class="list-label">Barang Terdaftar</p>
                         <div v-for="b in currentKategori.barangs.slice(0, 5)" :key="b.id" class="barang-mini-item">
                             <div class="barang-mini-dot" :class="kondisiDotClass(b.kondisi)"></div>
-                            <span class="barang-mini-nama">{{ b.nama }}</span>
-                            <span class="barang-mini-stok">{{ b.stok_tersedia }}</span>
+                            <span class="barang-mini-nama">{{ b.nama_barang ?? b.nama }}</span>
+                            <span class="barang-mini-stok">{{ b.stok_tersedia ?? 0 }}</span>
                         </div>
                         <p v-if="currentKategori.barangs.length > 5" class="more-text">
                             +{{ currentKategori.barangs.length - 5 }} barang lainnya
@@ -253,12 +302,13 @@
 
                     <div class="warn-box" v-if="(currentKategori.barangs_count ?? 0) > 0">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" width="13" height="13">
+                            stroke-linecap="round" width="13" height="13" style="flex-shrink:0;margin-top:1px">
                             <circle cx="12" cy="12" r="10" />
                             <line x1="12" y1="8" x2="12" y2="12" />
                             <line x1="12" y1="16" x2="12.01" y2="16" />
                         </svg>
-                        Kategori ini tidak dapat dihapus selama masih memiliki barang.
+                        Kategori ini tidak dapat dihapus selama masih memiliki
+                        <strong>{{ currentKategori.barangs_count }} barang</strong>.
                     </div>
                 </div>
 
@@ -304,12 +354,41 @@
                 </div>
             </div>
         </div>
+
+        <!-- ── Modal Konfirmasi Discard ────────────────────────────────── -->
+        <Transition name="modal-fade">
+            <div v-if="showDiscardModal" class="modal-overlay" @click.self="showDiscardModal = false">
+                <div class="modal">
+                    <div class="modal-icon modal-icon--warn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" width="22" height="22">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                    </div>
+                    <h3 class="modal-title">Buang Perubahan?</h3>
+                    <p class="modal-body">
+                        Ada perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?
+                    </p>
+                    <div class="modal-actions">
+                        <button class="btn-modal-cancel" @click="showDiscardModal = false">
+                            Tetap di Sini
+                        </button>
+                        <button class="btn-modal-discard" @click="confirmDiscard">
+                            Ya, Buang
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { RouterLink, useRouter, useRoute } from 'vue-router'
+import { RouterLink, useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
 import { useKategoriStore } from '@/stores/kategori'
 import kategoriService from '@/services/kategoriService'
 import { useToast } from 'vue-toastification'
@@ -329,20 +408,19 @@ const IKON_SETS = {
     'Furnitur': [
         { name: 'Armchair', label: 'Armchair' },
         { name: 'Bed', label: 'Bed' },
-        { name: 'Lamp', label: 'Lamp' },
-        { name: 'Table2', label: 'Table' },
-        { name: 'BookMarked', label: 'Shelf' },
-        { name: 'LayoutDashboard', label: 'Room' },
+        { name: 'Lamp', label: 'Lampu' },
+        { name: 'Table2', label: 'Meja' },
+        { name: 'BookMarked', label: 'Rak' },
+        { name: 'LayoutDashboard', label: 'Ruangan' },
     ],
     'Peralatan': [
-        { name: 'Wrench', label: 'Wrench' },
-        { name: 'Hammer', label: 'Hammer' },
-        { name: 'Scissors', label: 'Scissors' },
-        { name: 'Plug', label: 'Plug' },
+        { name: 'Wrench', label: 'Kunci' },
+        { name: 'Hammer', label: 'Palu' },
+        { name: 'Scissors', label: 'Gunting' },
+        { name: 'Plug', label: 'Stop' },
         { name: 'Lightbulb', label: 'Lampu' },
-        { name: 'Settings', label: 'Settings' },
-        { name: 'Tool', label: 'Tool' },
-        { name: 'Drill', label: 'Drill' },
+        { name: 'Settings', label: 'Alat' },
+        { name: 'Drill', label: 'Bor' },
     ],
     'Ibadah': [
         { name: 'BookOpen', label: 'Al-Quran' },
@@ -361,12 +439,11 @@ const IKON_SETS = {
         { name: 'Droplet', label: 'Air' },
         { name: 'ShoppingBasket', label: 'Belanja' },
         { name: 'Refrigerator', label: 'Kulkas' },
-        { name: 'Microwave', label: 'Microwave' },
         { name: 'ChefHat', label: 'Masak' },
     ],
     'Kebersihan': [
         { name: 'Trash2', label: 'Sampah' },
-        { name: 'Wind', label: 'Angin' },
+        { name: 'Wind', label: 'Kipas' },
         { name: 'Sparkles', label: 'Bersih' },
         { name: 'Package', label: 'Paket' },
         { name: 'Archive', label: 'Arsip' },
@@ -380,7 +457,6 @@ const IKON_SETS = {
         { name: 'Speaker', label: 'Speaker' },
         { name: 'Camera', label: 'Kamera' },
         { name: 'Printer', label: 'Printer' },
-        { name: 'Projector', label: 'Proyektor' },
         { name: 'Mic', label: 'Mikrofon' },
     ],
     'Penyimpanan': [
@@ -399,7 +475,7 @@ const IKON_SETS = {
         { name: 'Flag', label: 'Bendera' },
         { name: 'Grid', label: 'Grid' },
         { name: 'Circle', label: 'Bulat' },
-        { name: 'Zap', label: 'Zap' },
+        { name: 'Zap', label: 'Kilat' },
     ],
 }
 
@@ -412,27 +488,52 @@ const allIkons = computed(() =>
 )
 
 const filteredIkons = computed(() => {
-    const base = activeIkonCat.value === 'Semua'
-        ? allIkons.value
-        : (IKON_SETS[activeIkonCat.value] || [])
-
-    if (!ikonSearch.value.trim()) return base
-    const q = ikonSearch.value.toLowerCase()
-    return allIkons.value.filter(
-        i => i.name.toLowerCase().includes(q) || i.label.toLowerCase().includes(q)
-    )
+    const q = ikonSearch.value.trim().toLowerCase()
+    if (q) {
+        return allIkons.value.filter(
+            i => i.name.toLowerCase().includes(q) || i.label.toLowerCase().includes(q)
+        )
+    }
+    if (activeIkonCat.value === 'Semua') return allIkons.value
+    return IKON_SETS[activeIkonCat.value] || []
 })
 
-// ── Mode ────────────────────────────────────────────────────────────
+// ── Mode ─────────────────────────────────────────────────────────────
 const isEdit = computed(() => !!route.params.id)
 const currentKategori = ref(null)
 const loadingData = ref(false)
 const submitting = ref(false)
+const isDirty = ref(false)
 
 const form = ref({ nama: '', ikon: '', deskripsi: '' })
+const originalForm = ref({ nama: '', ikon: '', deskripsi: '' })
 const errors = ref({})
 
-// ── Computed ────────────────────────────────────────────────────────
+// Discard modal
+const showDiscardModal = ref(false)
+let pendingNavigation = null
+
+// ── Guard: cegah keluar jika ada perubahan ──────────────────────────
+onBeforeRouteLeave((to, from, next) => {
+    if (isDirty.value && !submitting.value) {
+        showDiscardModal.value = true
+        pendingNavigation = next
+        next(false)
+    } else {
+        next()
+    }
+})
+
+function confirmDiscard() {
+    isDirty.value = false
+    showDiscardModal.value = false
+    if (pendingNavigation) {
+        pendingNavigation()
+        pendingNavigation = null
+    }
+}
+
+// ── Computed ──────────────────────────────────────────────────────────
 const otherKategoris = computed(() => store.kategoris.slice(0, 8))
 
 const barangRusakCount = computed(() =>
@@ -441,7 +542,7 @@ const barangRusakCount = computed(() =>
     ).length
 )
 
-// ── Methods ─────────────────────────────────────────────────────────
+// ── Methods ───────────────────────────────────────────────────────────
 async function loadData() {
     if (!store.kategoris.length) {
         await store.fetchKategoris()
@@ -452,17 +553,27 @@ async function loadData() {
     try {
         const data = await kategoriService.getOne(route.params.id)
         currentKategori.value = data
-        form.value = {
+
+        const loaded = {
             nama: data.nama ?? '',
             ikon: data.ikon ?? '',
             deskripsi: data.deskripsi ?? '',
         }
+        form.value = { ...loaded }
+        originalForm.value = { ...loaded }
+        isDirty.value = false
     } catch {
         toast.error('Gagal memuat data kategori.')
         router.push('/kategori')
     } finally {
         loadingData.value = false
     }
+}
+
+function resetForm() {
+    form.value = { ...originalForm.value }
+    isDirty.value = false
+    errors.value = {}
 }
 
 function validate() {
@@ -475,12 +586,14 @@ function validate() {
 
 async function handleSubmit() {
     if (!validate()) return
+    if (isEdit.value && !isDirty.value) return
+
     submitting.value = true
 
     const payload = {
         nama: form.value.nama.trim(),
         ikon: form.value.ikon || null,
-        deskripsi: form.value.deskripsi || null,
+        deskripsi: form.value.deskripsi.trim() || null,
     }
 
     try {
@@ -491,6 +604,7 @@ async function handleSubmit() {
             await store.createKategori(payload)
             toast.success('Kategori berhasil ditambahkan!')
         }
+        isDirty.value = false
         router.push('/kategori')
     } catch (err) {
         const errData = err?.response?.data?.errors
@@ -507,7 +621,7 @@ async function handleSubmit() {
     }
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────
 const COLORS = ['#16a34a', '#0891b2', '#7c3aed', '#db2777', '#ea580c', '#ca8a04', '#059669', '#2563eb']
 function itemColor(nama = '') {
     let h = 0
@@ -570,32 +684,55 @@ onMounted(() => loadData())
     font-weight: 700;
     color: #111827;
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pg-title__badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.3px;
+}
+
+.pg-title__badge--edit {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+}
+
+.pg-title__badge--add {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
 }
 
 .pg-sub {
     font-size: 13px;
     color: #6b7280;
-    margin: 2px 0 0;
+    margin: 4px 0 0;
 }
 
-/* Loading */
+/* ── Loading ─────────────────────────────────────────────────────── */
 .loading-state {
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 64px;
-    gap: 12px;
+    gap: 14px;
     color: #9ca3af;
     font-size: 14px;
 }
 
-.loading-spinner {
-    width: 28px;
-    height: 28px;
-    border: 3px solid #f0f0f0;
-    border-top-color: #16a34a;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
+.loading-ring {
+    animation: spin 1s linear infinite;
+}
+
+.ring-spin {
+    transform-origin: 25px 25px;
+    animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
@@ -630,6 +767,7 @@ onMounted(() => loadData())
     border-radius: 12px;
     border: 1px solid #f0f0f0;
     overflow: hidden;
+    transition: border-color 0.2s;
 }
 
 .form-card__header {
@@ -662,11 +800,27 @@ onMounted(() => loadData())
 }
 
 .form-card__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-size: 11px;
     font-weight: 600;
     color: #16a34a;
     background: #f0fdf4;
     border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    padding: 2px 8px;
+}
+
+.form-card__dirty-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #d97706;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
     border-radius: 6px;
     padding: 2px 8px;
 }
@@ -689,11 +843,27 @@ onMounted(() => loadData())
     font-size: 12.5px;
     font-weight: 600;
     color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.field-label__opt {
+    font-size: 10.5px;
+    font-weight: 500;
+    color: #9ca3af;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    padding: 1px 6px;
+    border-radius: 4px;
 }
 
 .required {
     color: #ef4444;
-    margin-left: 2px;
+}
+
+.field-input-wrap {
+    position: relative;
 }
 
 .field-input {
@@ -710,6 +880,10 @@ onMounted(() => loadData())
     box-sizing: border-box;
 }
 
+.field-input-wrap .field-input {
+    padding-right: 56px;
+}
+
 .field-input:focus {
     border-color: #16a34a;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
@@ -720,7 +894,7 @@ onMounted(() => loadData())
 }
 
 .field-input--error {
-    border-color: #fca5a5;
+    border-color: #fca5a5 !important;
     background: #fff5f5;
 }
 
@@ -730,10 +904,27 @@ onMounted(() => loadData())
     line-height: 1.6;
 }
 
+.char-counter {
+    position: absolute;
+    right: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    font-weight: 500;
+    color: #9ca3af;
+    pointer-events: none;
+    transition: color 0.2s;
+}
+
+.char-counter--warn {
+    color: #f59e0b;
+}
+
 .field-hint {
     font-size: 11.5px;
     color: #9ca3af;
     margin: 0;
+    line-height: 1.5;
 }
 
 .field-error {
@@ -755,6 +946,12 @@ onMounted(() => loadData())
     border: 1.5px solid #e5e7eb;
     border-radius: 10px;
     background: #f9fafb;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.ikon-preview-bar--active {
+    background: white;
+    border-color: #d1fae5;
 }
 
 .ikon-preview-box {
@@ -934,9 +1131,6 @@ onMounted(() => loadData())
 }
 
 .ikon-pick-btn--active {
-    border-color: #16a34a;
-    background: #f0fdf4;
-    color: #16a34a;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
 }
 
@@ -962,15 +1156,38 @@ onMounted(() => loadData())
     font-size: 13px;
 }
 
-/* ── Form actions ───────────────────────────────────────────────── */
+/* ── Form actions ─────────────────────────────────────────────────── */
 .form-actions {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     justify-content: flex-end;
+    align-items: center;
+}
+
+.btn-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 9px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 9px;
+    background: white;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    margin-right: auto;
+}
+
+.btn-reset:hover {
+    background: #f9fafb;
+    color: #374151;
 }
 
 .btn-cancel {
-    padding: 10px 20px;
+    padding: 10px 18px;
     border: 1.5px solid #e5e7eb;
     border-radius: 9px;
     background: white;
@@ -1010,7 +1227,7 @@ onMounted(() => loadData())
 }
 
 .btn-submit:disabled {
-    opacity: 0.65;
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
@@ -1043,7 +1260,7 @@ onMounted(() => loadData())
     padding: 16px;
     width: 100%;
     box-sizing: border-box;
-    transition: all 0.2s;
+    transition: all 0.3s;
 }
 
 .preview-card-top {
@@ -1068,7 +1285,7 @@ onMounted(() => loadData())
     height: 8px;
     border-radius: 50%;
     margin-top: 4px;
-    transition: background 0.2s;
+    transition: background 0.3s;
 }
 
 .preview-nama {
@@ -1080,13 +1297,17 @@ onMounted(() => loadData())
 
 .preview-desc {
     font-size: 12px;
-    color: #9ca3af;
+    color: #374151;
     margin: 0 0 12px;
     line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+.preview-desc--placeholder {
+    color: #9ca3af;
     font-style: italic;
 }
 
@@ -1104,6 +1325,21 @@ onMounted(() => loadData())
     color: #6b7280;
 }
 
+.diff-note {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+    padding: 7px 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 7px;
+    font-size: 11.5px;
+    color: #1d4ed8;
+    line-height: 1.4;
+    flex-wrap: wrap;
+}
+
 /* Info card (edit mode) */
 .info-card {
     background: white;
@@ -1116,7 +1352,7 @@ onMounted(() => loadData())
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .stat-mini {
@@ -1140,6 +1376,31 @@ onMounted(() => loadData())
     font-weight: 500;
 }
 
+.id-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    background: #f9fafb;
+    border-radius: 7px;
+    margin-bottom: 12px;
+}
+
+.id-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.id-val {
+    font-size: 12px;
+    font-weight: 700;
+    color: #374151;
+    font-family: 'Courier New', monospace;
+}
+
 .list-label {
     font-size: 10.5px;
     font-weight: 700;
@@ -1152,6 +1413,7 @@ onMounted(() => loadData())
 .barang-mini-list {
     display: flex;
     flex-direction: column;
+    margin-bottom: 12px;
 }
 
 .barang-mini-item {
@@ -1219,7 +1481,6 @@ onMounted(() => loadData())
     font-size: 12px;
     color: #92400e;
     line-height: 1.5;
-    margin-top: 12px;
 }
 
 /* Tips */
@@ -1304,6 +1565,107 @@ onMounted(() => loadData())
     color: #16a34a;
 }
 
+/* ── Modal ───────────────────────────────────────────────────────── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.modal {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 360px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.modal-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+
+.modal-icon--warn {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px;
+}
+
+.modal-body {
+    font-size: 13.5px;
+    color: #6b7280;
+    margin: 0 0 20px;
+    line-height: 1.6;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-modal-cancel {
+    padding: 9px 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    background: white;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+}
+
+.btn-modal-cancel:hover {
+    background: #f9fafb;
+}
+
+.btn-modal-discard {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 9px;
+    background: #d97706;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+}
+
+.btn-modal-discard:hover {
+    background: #b45309;
+}
+
+/* Transition */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+    opacity: 0;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 760px) {
     .content-grid {
@@ -1316,6 +1678,17 @@ onMounted(() => loadData())
 
     .ikon-picker-grid {
         grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    }
+
+    .form-actions {
+        flex-wrap: wrap;
+    }
+
+    .btn-reset {
+        margin-right: 0;
+        width: 100%;
+        justify-content: center;
+        order: 3;
     }
 }
 </style>

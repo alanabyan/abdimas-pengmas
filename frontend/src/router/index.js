@@ -39,7 +39,6 @@ const routes = [
     // Jika user ke "/", sistem akan lempar ke dashboard (yang nanti dicek loginnya)
     redirect: '/dashboard' 
   },
-
   // --- Group Route Login (GUEST ONLY) ---
   {
     path: '/',
@@ -100,6 +99,9 @@ const routes = [
       { path: 'barang/:id/edit', name: 'Edit Barang', component: EditBarang, meta: { title: 'Edit Barang' } },
       { path: 'kategori', name: 'Daftar Kategori', component: DaftarKategori, meta: { title: 'Daftar Kategori' } },
       { path: 'kategori/tambah', name: 'Tambah Kategori', component: TambahKategori, meta: { title: 'Tambah Kategori' } },
+      { path: 'kategori/:id/edit', name: 'Edit Kategori', component: TambahKategori, meta: { title: 'Edit Kategori' } },
+
+
     ]
   }
 ]

@@ -50,7 +50,9 @@
                     <span class="chip-lbl">Total Kasus</span>
                 </div>
                 <div class="chip chip--orange">
-                    <span class="chip-val">{{ countByKondisi('Rusak') }}</span>
+                    <span class="chip-val">
+                        {{ totalRusak() }}
+                    </span>
                     <span class="chip-lbl">Rusak</span>
                 </div>
                 <div class="chip chip--red">
@@ -144,56 +146,158 @@ import laporanService from '@/services/laporanService'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
+
 const loading = ref(false)
 const pdfLoading = ref(false)
 const data = ref([])
-const now = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-const filter = reactive({ dari: '', sampai: '' })
 
+const now = new Date().toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+})
+
+// ── Default tanggal bulan berjalan ─────────────────────
+const today = new Date()
+
+// tanggal 1 bulan sekarang
+const firstDay = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    1
+)
+
+// tanggal terakhir bulan sekarang
+const lastDay = new Date(
+    today.getFullYear(),
+    today.getMonth() + 1,
+    0
+)
+
+function formatDate(date) {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+
+    return `${year}-${month}-${day}`
+}
+
+const filter = reactive({
+    dari: formatDate(firstDay),
+    sampai: formatDate(lastDay),
+})
+
+// ── Fetch data ──────────────────────────────────────────
 async function fetchData() {
     loading.value = true
+
     try {
-        const params = {}
-        if (filter.dari) params.dari = filter.dari
-        if (filter.sampai) params.sampai = filter.sampai
+        const params = {
+            dari: filter.dari,
+            sampai: filter.sampai,
+        }
+
         const res = await laporanService.getKerusakan(params)
+
         data.value = res.data ?? res
-    } catch { useToast().error('Gagal memuat data.') }
-    finally { loading.value = false }
+    } catch (e) {
+        toast.error('Gagal memuat data.')
+    } finally {
+        loading.value = false
+    }
 }
 
-function resetFilter() { filter.dari = filter.sampai = ''; fetchData() }
+// ── Reset filter ────────────────────────────────────────
+function resetFilter() {
+    filter.dari = formatDate(firstDay)
+    filter.sampai = formatDate(lastDay)
 
+    fetchData()
+}
+
+// ── Download PDF ────────────────────────────────────────
 async function downloadPdf() {
     pdfLoading.value = true
+
     try {
-        const params = {}
-        if (filter.dari) params.dari = filter.dari
-        if (filter.sampai) params.sampai = filter.sampai
+        const params = {
+            dari: filter.dari,
+            sampai: filter.sampai,
+        }
+
+        // ambil blob PDF dari backend
         const blob = await laporanService.downloadKerusakanPdf(params)
-        const url = `http://localhost:8000/api/v1/laporan/kerusakan/pdf?dari=${filter.dari}&sampai=${filter.sampai}`;
-        window.open(url, '_blank');
+
+        // buat URL sementara
+        const url = window.URL.createObjectURL(blob)
+
+        // trigger download
         const a = document.createElement('a')
-        a.href = url; a.download = `laporan-kerusakan-${new Date().toISOString().slice(0, 10)}.pdf`
-        document.body.appendChild(a); a.click()
-        document.body.removeChild(a); URL.revokeObjectURL(url)
+        a.href = url
+        a.download = `laporan-kerusakan-${new Date()
+            .toISOString()
+            .slice(0, 10)}.pdf`
+
+        document.body.appendChild(a)
+        a.click()
+
+        document.body.removeChild(a)
+
+        // hapus URL sementara
+        window.URL.revokeObjectURL(url)
+
         toast.success('PDF berhasil diunduh.')
-    } catch { toast.error('Gagal mengunduh PDF.') }
-    finally { pdfLoading.value = false }
+    } catch (e) {
+        console.error(e)
+        toast.error('Gagal mengunduh PDF.')
+    } finally {
+        pdfLoading.value = false
+    }
 }
 
-function countByKondisi(k) { return data.value.filter(d => d.kondisi_kembali === k).length }
+// ── Statistik ───────────────────────────────────────────
+function countByKondisi(kondisi) {
+    return data.value.filter(
+        d => d.kondisi_kembali === kondisi
+    ).length
+}
+
+function totalRusak() {
+    return (
+        countByKondisi('Rusak Ringan') +
+        countByKondisi('Rusak Berat')
+    )
+}
+
+// ── Formatter ───────────────────────────────────────────
 function fmtDate(d) {
     if (!d) return '—'
-    return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+
+    return new Date(d).toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    })
 }
+
+// ── Badge kondisi ───────────────────────────────────────
 function kondisiClass(k) {
-    if (k === 'Rusak') return 'kondisi--rusak'
-    if (k === 'Hilang') return 'kondisi--hilang'
+    if (k === 'Rusak Ringan' || k === 'Rusak Berat') {
+        return 'kondisi--rusak'
+    }
+
+    if (k === 'Hilang') {
+        return 'kondisi--hilang'
+    }
+
     return ''
 }
 
-onMounted(() => fetchData())
+onMounted(() => {
+    fetchData()
+})
 </script>
 
 <style scoped>

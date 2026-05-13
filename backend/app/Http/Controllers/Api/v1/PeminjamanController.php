@@ -19,7 +19,7 @@ class PeminjamanController extends Controller
     {
         $query = Peminjaman::with([
             'warga:id,nama_warga,no_hp,rt_rw',
-            'barang:id,nama_barang,foto_url',
+            'barang.kategori',
             'marbot:id,nama_marbot',
         ]);
 
