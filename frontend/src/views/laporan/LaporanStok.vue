@@ -1,7 +1,6 @@
 <template>
     <div class="laporan-page">
 
-        <!-- ── Header ──────────────────────────────────────────────────────── -->
         <div class="page-top">
             <div>
                 <h1 class="pg-title">Laporan Stok Barang</h1>
@@ -21,7 +20,6 @@
             </div>
         </div>
 
-        <!-- ── Loading ─────────────────────────────────────────────────────── -->
         <div v-if="loading" class="state-center">
             <span class="spinner-lg"></span>
             <p>Memuat data stok...</p>
@@ -29,7 +27,6 @@
 
         <template v-else-if="dataStok.length">
 
-            <!-- ── Grand total (sama persis pola gt-card di LaporanStok lama) ── -->
             <div class="grand-total-row">
                 <div class="gt-card gt-card--total">
                     <p class="gt-val">{{ grandTotal.stok_total }}</p>
@@ -49,7 +46,6 @@
                 </div>
             </div>
 
-            <!-- ── Distribusi mini chart ────────────────────────────────────── -->
             <div class="dist-card">
                 <p class="dist-title">Distribusi Stok per Kategori</p>
                 <div class="dist-list">
@@ -68,10 +64,8 @@
                 </div>
             </div>
 
-            <!-- ── Kategori blocks ──────────────────────────────────────────── -->
             <div v-for="kategori in dataStok" :key="kategori.kategori" class="kategori-block">
 
-                <!-- Header accordion -->
                 <div class="kat-header" @click="toggleKat(kategori.kategori)">
                     <div class="kat-header__left">
                         <div class="kat-ikon"
@@ -100,7 +94,6 @@
                         </span>
                     </div>
 
-                    <!-- Progress bar mini di header -->
                     <div class="kat-progress-mini">
                         <div class="kat-progress-mini__fill"
                             :style="{ width: pctBar(kategori.stok_tersedia, kategori.stok_total) + '%', background: itemColor(kategori.kategori) }">
@@ -114,7 +107,6 @@
                     </svg>
                 </div>
 
-                <!-- Table barang -->
                 <div v-if="!collapsed[kategori.kategori]" class="kat-table-wrap">
                     <table class="stok-table">
                         <thead>
@@ -165,7 +157,6 @@
 
             </div>
 
-            <!-- ── Footer ──────────────────────────────────────────────────── -->
             <div class="laporan-footer">
                 <div class="footer-left">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -180,7 +171,6 @@
 
         </template>
 
-        <!-- ── Empty ───────────────────────────────────────────────────────── -->
         <div v-else class="state-center">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"
                 style="color:#d1d5db">
@@ -455,6 +445,7 @@ onMounted(fetchData)
     cursor: pointer;
     transition: all 0.2s;
     font-family: inherit;
+    width: max-content;
 }
 
 .btn-pdf:hover:not(:disabled) {
@@ -619,7 +610,7 @@ onMounted(fetchData)
     width: 100%;
     border-collapse: collapse;
     font-size: 12.5px;
-    min-width: 700px;
+    min-width: 700px; /* Lebar minimum normal */
 }
 
 .stok-table thead tr {
@@ -842,8 +833,32 @@ onMounted(fetchData)
     transform: rotate(180deg);
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────── */
+/* ── RESPONSIVE MODE (PAKAI PSEUDO CLASS AGAR TIDAK GANTI TEMPLATE) ──────── */
+
+/* Tablet & Laptop kecil: Sembunyikan kolom Lokasi (ke-3) */
+@media (max-width: 992px) {
+    .stok-table th:nth-child(3),
+    .stok-table td:nth-child(3) {
+        display: none;
+    }
+}
+
+/* HP & Tablet Kecil */
 @media (max-width: 768px) {
+    .laporan-page { padding: 16px 20px; }
+    
+    .page-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .btn-pdf {
+        width: 100%;
+        justify-content: center;
+        max-content: none;
+    }
+
     .grand-total-row {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -855,11 +870,43 @@ onMounted(fetchData)
     .kat-header__stats {
         display: none;
     }
+
+    /* Sembunyikan kolom Kondisi (ke-4) */
+    .stok-table th:nth-child(4),
+    .stok-table td:nth-child(4) {
+        display: none;
+    }
+}
+
+/* HP Portrait Kecil */
+@media (max-width: 600px) {
+    /* Sembunyikan Stok Total (ke-5) dan Dipinjam (ke-7) biar ringkas */
+    .stok-table th:nth-child(5),
+    .stok-table td:nth-child(5),
+    .stok-table th:nth-child(7),
+    .stok-table td:nth-child(7) {
+        display: none;
+    }
+    
+    /* Biar tabel nggak maksain scroll kalau udah dipotong kolomnya */
+    .stok-table {
+        min-width: 100%; 
+    }
+
+    .laporan-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
 }
 
 @media (max-width: 480px) {
     .grand-total-row {
         grid-template-columns: 1fr 1fr;
+    }
+    
+    .kat-progress-mini {
+        display: none; /* Umpetin bar mini biar nggak kesempitan */
     }
 }
 </style>

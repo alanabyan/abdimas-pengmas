@@ -23,6 +23,16 @@
                     <p class="page-sub">Hanya bisa diubah selama status masih Menunggu</p>
                 </div>
             </div>
+            
+            <div class="header-action">
+                <router-link to="/peminjaman/tambah" class="btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Tambah Peminjaman
+                </router-link>
+            </div>
         </div>
 
         <div v-if="store.loading" class="form-card">
@@ -360,6 +370,7 @@ onMounted(async () => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
+/* ── Base ── */
 .page {
     font-family: 'Plus Jakarta Sans', sans-serif;
     padding: 28px 32px;
@@ -368,9 +379,7 @@ onMounted(async () => {
     color: #1a1f2e;
 }
 
-.back-row {
-    margin-bottom: 18px;
-}
+.back-row { margin-bottom: 18px; }
 
 .back-link {
     display: inline-flex;
@@ -380,22 +389,20 @@ onMounted(async () => {
     font-weight: 500;
     color: #7a8499;
     text-decoration: none;
+    transition: color .15s;
 }
 
-.back-link svg {
-    width: 16px;
-    height: 16px;
-}
+.back-link svg { width: 16px; height: 16px; }
+.back-link:hover { color: #1e3a5f; }
 
-.back-link:hover {
-    color: #1e3a5f;
-}
-
+/* ── Header ── */
 .page-header {
     display: flex;
-    align-items: center;
+    align-items: center; /* Sejajarin vertikal */
+    justify-content: space-between; /* Pisahin Kiri dan Kanan */
     gap: 14px;
     margin-bottom: 24px;
+    flex-wrap: wrap; /* Biar aman kalau layarnya kecil */
 }
 
 .header-left {
@@ -413,12 +420,10 @@ onMounted(async () => {
     align-items: center;
     justify-content: center;
     color: #fff;
+    flex-shrink: 0;
 }
 
-.header-icon svg {
-    width: 20px;
-    height: 20px;
-}
+.header-icon svg { width: 20px; height: 20px; }
 
 .page-title {
     font-size: 20px;
@@ -431,6 +436,35 @@ onMounted(async () => {
     color: #7a8499;
     margin: 2px 0 0;
 }
+
+/* ── KUNCI JURUS ANTI RAKSASA ── */
+.header-action {
+    flex-shrink: 0; /* Biar wadahnya gak kegencet atau meral */
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #1e3a5f;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .2s;
+    
+    /* GAK BISA BANTAH */
+    width: max-content; 
+    flex-shrink: 0;
+    white-space: nowrap; 
+}
+.btn-primary svg { flex-shrink: 0; }
+.btn-primary:hover { background: #162d4a; }
+
 
 /* Locked notice */
 .locked-notice {
@@ -456,23 +490,9 @@ onMounted(async () => {
     color: #d97706;
 }
 
-.locked-ico svg {
-    width: 24px;
-    height: 24px;
-}
-
-.locked-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: #1a1f2e;
-    margin: 0;
-}
-
-.locked-sub {
-    font-size: 14px;
-    color: #7a8499;
-    margin: 4px 0 0;
-}
+.locked-ico svg { width: 24px; height: 24px; }
+.locked-title { font-size: 16px; font-weight: 700; color: #1a1f2e; margin: 0; }
+.locked-sub { font-size: 14px; color: #7a8499; margin: 4px 0 0; }
 
 /* Form card */
 .form-card {
@@ -557,14 +577,8 @@ onMounted(async () => {
     box-sizing: border-box;
 }
 
-.search-select.focused {
-    border-color: #1e3a5f;
-}
-
-.search-select.error {
-    border-color: #dc2626;
-    background: #fff5f5;
-}
+.search-select.focused { border-color: #1e3a5f; }
+.search-select.error { border-color: #dc2626; background: #fff5f5; }
 
 .search-select>svg {
     width: 15px;
@@ -587,20 +601,9 @@ onMounted(async () => {
     box-sizing: border-box;
 }
 
-.search-select input.has-value {
-    color: #1a1f2e;
-    font-weight: 500;
-}
-
-.search-select input::placeholder {
-    color: #a0aec0;
-    font-weight: 400;
-}
-
-.search-select input.has-value::placeholder {
-    color: #1a1f2e;
-    font-weight: 500;
-}
+.search-select input.has-value { color: #1a1f2e; font-weight: 500; }
+.search-select input::placeholder { color: #a0aec0; font-weight: 400; }
+.search-select input.has-value::placeholder { color: #1a1f2e; font-weight: 500; }
 
 .clear-btn {
     background: none;
@@ -614,14 +617,8 @@ onMounted(async () => {
     transition: color .15s;
 }
 
-.clear-btn:hover {
-    color: #dc2626;
-}
-
-.clear-btn svg {
-    width: 14px;
-    height: 14px;
-}
+.clear-btn:hover { color: #dc2626; }
+.clear-btn svg { width: 14px; height: 14px; }
 
 .warga-dropdown {
     position: absolute;
@@ -656,15 +653,8 @@ onMounted(async () => {
     box-sizing: border-box;
 }
 
-.warga-option:hover {
-    background: #f1f5f9;
-}
-
-.warga-option.active {
-    background: #eff6ff;
-    color: #1e3a5f;
-    font-weight: 600;
-}
+.warga-option:hover { background: #f1f5f9; }
+.warga-option.active { background: #eff6ff; color: #1e3a5f; font-weight: 600; }
 
 .warga-avatar {
     width: 28px;
@@ -708,29 +698,11 @@ onMounted(async () => {
     font-weight: 500;
 }
 
-.readonly-field svg {
-    width: 15px;
-    height: 15px;
-    flex-shrink: 0;
-    color: #c4ccdb;
-}
+.readonly-field svg { width: 15px; height: 15px; flex-shrink: 0; color: #c4ccdb; }
+.readonly-hint { margin-left: auto; font-size: 11px; color: #c4ccdb; font-style: italic; }
 
-.readonly-hint {
-    margin-left: auto;
-    font-size: 11px;
-    color: #c4ccdb;
-    font-style: italic;
-}
-
-.err-msg {
-    font-size: 12px;
-    color: #dc2626;
-}
-
-.hint-msg {
-    font-size: 12px;
-    color: #7a8499;
-}
+.err-msg { font-size: 12px; color: #dc2626; }
+.hint-msg { font-size: 12px; color: #7a8499; }
 
 .server-error {
     background: #fef2f2;
@@ -764,9 +736,7 @@ onMounted(async () => {
     transition: border-color .15s;
 }
 
-.btn-cancel:hover {
-    border-color: #c4ccdb;
-}
+.btn-cancel:hover { border-color: #c4ccdb; }
 
 .btn-submit {
     display: inline-flex;
@@ -784,26 +754,8 @@ onMounted(async () => {
     transition: background .15s;
 }
 
-.btn-submit:not(:disabled):hover {
-    background: #162d4a;
-}
-
-.btn-submit:disabled {
-    opacity: .6;
-    cursor: not-allowed;
-}
-
-.btn-primary {
-    display: inline-flex;
-    align-items: center;
-    background: #1e3a5f;
-    color: #fff;
-    border-radius: 10px;
-    padding: 10px 18px;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-}
+.btn-submit:not(:disabled):hover { background: #162d4a; }
+.btn-submit:disabled { opacity: .6; cursor: not-allowed; }
 
 /* Skeleton */
 .skel-body {
@@ -821,13 +773,8 @@ onMounted(async () => {
 }
 
 @keyframes shimmer {
-    0% {
-        background-position: 200% 0;
-    }
-
-    100% {
-        background-position: -200% 0;
-    }
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
 /* Spinner */
@@ -841,9 +788,7 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+    to { transform: rotate(360deg); }
 }
 
 /* Toast */
@@ -864,49 +809,36 @@ onMounted(async () => {
     max-width: 340px;
 }
 
-.toast svg {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-}
+.toast svg { width: 18px; height: 18px; flex-shrink: 0; }
+.toast-success { background: #1a1f2e; color: #fff; }
+.toast-warning { background: #d97706; color: #fff; }
+.toast-error { background: #dc2626; color: #fff; }
 
-.toast-success {
-    background: #1a1f2e;
-    color: #fff;
-}
-
-.toast-warning {
-    background: #d97706;
-    color: #fff;
-}
-
-.toast-error {
-    background: #dc2626;
-    color: #fff;
-}
-
-.toast-enter-active {
-    transition: all .3s cubic-bezier(.34, 1.4, .64, 1);
-}
-
-.toast-leave-active {
-    transition: all .2s ease;
-}
-
-.toast-enter-from {
-    opacity: 0;
-    transform: translateY(16px) scale(.95);
-}
-
-.toast-leave-to {
-    opacity: 0;
-    transform: translateY(8px);
-}
+.toast-enter-active { transition: all .3s cubic-bezier(.34, 1.4, .64, 1); }
+.toast-leave-active { transition: all .2s ease; }
+.toast-enter-from { opacity: 0; transform: translateY(16px) scale(.95); }
+.toast-leave-to { opacity: 0; transform: translateY(8px); }
 
 /* ── RESPONSIVE MODE ────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .page {
         padding: 16px 20px;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: stretch; /* Supaya isinya memenuhi layar HP */
+        gap: 16px;
+    }
+
+    .header-action {
+        width: 100%;
+    }
+
+    .btn-primary {
+        width: 100%; /* Lebar penuh khusus di HP */
+        max-width: none; 
+        justify-content: center;
     }
 
     .form-card {
@@ -925,14 +857,18 @@ onMounted(async () => {
     .readonly-hint {
         display: none; /* Sembunyikan hint kecil biar gak sesak */
     }
+    
+    .toast { 
+        left: 20px; 
+        right: 20px; 
+        bottom: 20px; 
+        max-width: none; 
+        justify-content: center; 
+    }
 }
 
 @media (max-width: 480px) {
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
+    .page-title { font-size: 20px; }
 
     .form-footer {
         flex-direction: column; /* Tombol batal & simpan jadi numpuk */
@@ -943,12 +879,7 @@ onMounted(async () => {
         justify-content: center;
     }
 
-    .btn-submit {
-        order: 1; /* Simpan di atas */
-    }
-
-    .btn-cancel {
-        order: 2; /* Batal di bawah */
-    }
+    .btn-submit { order: 1; } /* Simpan di atas */
+    .btn-cancel { order: 2; } /* Batal di bawah */
 }
 </style>

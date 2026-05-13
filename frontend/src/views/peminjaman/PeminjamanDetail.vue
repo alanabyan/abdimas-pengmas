@@ -969,16 +969,29 @@ onMounted(() => store.fetchPeminjaman(route.params.id))
     .card-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 12px;
+        gap: 16px;
+    }
+    
+    .card-title-row {
+        width: 100%;
+        flex-wrap: wrap; /* Biar kalau panjang dia ke bawah, ga motong layar */
     }
 
     .fields-grid {
         grid-template-columns: 1fr; /* Field berjejer satu kolom ke bawah */
-        padding: 8px 16px 16px;
+        padding: 16px;
+        gap: 0;
     }
 
     .field {
+        flex-direction: column; 
+        align-items: flex-start; 
+        gap: 4px; 
         padding: 12px 0;
+    }
+    
+    .field-value {
+        text-align: left; /* Teks value lurus ke kiri */
     }
 
     .sidebar {
@@ -987,6 +1000,15 @@ onMounted(() => store.fetchPeminjaman(route.params.id))
 
     .main-card {
         order: 1; /* Main Card di atas */
+    }
+    
+    /* Toast nempel bawah */
+    .toast { 
+        left: 20px; 
+        right: 20px; 
+        bottom: 20px; 
+        max-width: none; 
+        justify-content: center; 
     }
 }
 
@@ -1003,11 +1025,28 @@ onMounted(() => store.fetchPeminjaman(route.params.id))
 
     .warga-name {
         font-size: 18px;
+        line-height: 1.2;
+    }
+    
+    .warga-sub {
+        font-size: 12px;
     }
 
     .act-full {
         padding: 12px;
         font-size: 13px;
     }
+    
+    /* Modal Button numpuk */
+    .modal-footer { 
+        flex-direction: column; 
+        gap: 10px; 
+    }
+    .btn-cancel, .btn-submit { 
+        width: 100%; 
+        justify-content: center; 
+    }
+    .btn-submit { order: 1; }
+    .btn-cancel { order: 2; }
 }
 </style>
