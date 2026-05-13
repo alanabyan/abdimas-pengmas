@@ -5,191 +5,236 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Barang;
 use App\Models\Warga;
-use App\Models\Kategori; // Pastikan model Kategori ada
-use App\Models\Peminjaman; // Pastikan model Peminjaman ada
+use App\Models\Kategori;
+use App\Models\Peminjaman;
+use App\Models\Marbot;
 use Carbon\Carbon;
+
 
 class DummyDataSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // 1. Isi data Kategori (Agar barang punya relasi yang bener)
-        $katPesta = Kategori::create([
-            'nama' => 'Alat Pesta',
-            'deskripsi' => 'Tenda, kursi, meja, dan perlengkapan acara warga.'
-        ]);
+        // 1. Marbot
+        $marbot = Marbot::where('email', 'marbot@masjid.com')->firstOrFail();
 
-        $katElektronik = Kategori::create([
-            'nama' => 'Elektronik',
-            'deskripsi' => 'Sound system, mic, proyektor, dan genset.'
-        ]);
+        // 2. Kategori — pakai firstOrCreate semua agar tidak duplikat
+        $katPesta = Kategori::firstOrCreate(
+            ['nama' => 'Alat Pesta'],
+            [
+                'ikon'      => 'confetti',
+                'deskripsi' => 'Tenda, kursi, meja, dan perlengkapan acara warga.',
+            ]
+        );
 
-        $katIbadah = Kategori::create([
-            'nama' => 'Perlengkapan Ibadah',
-            'deskripsi' => 'Karpet, pembatas shof, dan kain penutup.'
-        ]);
+        $katElektronik = Kategori::firstOrCreate(
+            ['nama' => 'Elektronik'],
+            [
+                'ikon'      => 'plug',
+                'deskripsi' => 'Sound system, mic, proyektor, dan genset.',
+            ]
+        );
 
-        // --- TAMBAHAN KATEGORI BARU ---
-        $katKebersihan = Kategori::create([
-            'nama' => 'Alat Kebersihan',
-            'deskripsi' => 'Alat pendukung kebersihan area masjid dan lingkungan.'
-        ]);
+        $katIbadah = Kategori::firstOrCreate(
+            ['nama' => 'Perlengkapan Ibadah'],
+            [
+                'ikon'      => 'prayer',
+                'deskripsi' => 'Karpet, pembatas shof, dan kain penutup.',
+            ]
+        );
 
-        $katMedis = Kategori::create([
-            'nama' => 'Alat Medis',
-            'deskripsi' => 'Kursi roda dan tandu untuk warga yang sakit.'
-        ]);
+        $katKebersihan = Kategori::firstOrCreate(
+            ['nama' => 'Kebersihan'],
+            [
+                'ikon'      => 'bucket',
+                'deskripsi' => 'Alat pendukung kebersihan area masjid dan lingkungan.',
+            ]
+        );
 
-        // 2. Isi data Barang
-        $barang1 = Barang::create([
-            'nama_barang' => 'Kursi Futura Biru',
-            'kategori_id' => $katPesta->id,
-            'stok_total' => 100,
-            'stok_tersedia' => 80, // Anggap 20 lagi dipinjam
-            'lokasi' => 'Gudang Belakang',
-            'kondisi' => 'Baik',
-            'foto' => 'barang/kursi.jpg',
-            'deskripsi' => 'Kursi besi lipat dengan busa biru'
-        ]);
+        $katMedis = Kategori::firstOrCreate(
+            ['nama' => 'Alat Medis'],
+            [
+                'ikon'      => 'first-aid',
+                'deskripsi' => 'Kursi roda dan tandu untuk warga yang sakit.',
+            ]
+        );
 
-        $barang2 = Barang::create([
-            'nama_barang' => 'Mic Wireless Shure',
-            'kategori_id' => $katElektronik->id,
-            'stok_total' => 4,
-            'stok_tersedia' => 4,
-            'lokasi' => 'Lemari Sekretariat',
-            'kondisi' => 'Baik',
-            'foto'=> 'barang/mic.jpg',
-            'deskripsi' => 'Satu set isi 2 mic tanpa kabel'
-        ]);
+        // 3. Barang — pakai firstOrCreate agar tidak duplikat
+        $barang1 = Barang::firstOrCreate(
+            ['nama_barang' => 'Kursi Futura Biru'],
+            [
+                'kategori_id'   => $katPesta->id,
+                'stok_total'    => 100,
+                'stok_tersedia' => 80,
+                'lokasi'        => 'Gudang Belakang',
+                'kondisi'       => 'Baik',
+                'foto_url'      => 'barang/kursi.jpg',
+                'deskripsi'     => 'Kursi besi lipat dengan busa biru',
+            ]
+        );
 
-        $barang3 = Barang::create([
-            'nama_barang' => 'Vacuum Cleaner Sharp',
-            'kategori_id' => $katKebersihan->id, // Diubah agar dinamis ke kategori kebersihan
-            'stok_total' => 2,
-            'stok_tersedia' => 1,
-            'lokasi' => 'Ruang Marbot',
-            'kondisi' => 'Baik',
-            'foto' => 'barang/vacuum.jpg',
-            'deskripsi' => 'Alat penyedot debu karpet masjid'
-        ]);
+        $barang2 = Barang::firstOrCreate(
+            ['nama_barang' => 'Mic Wireless Shure'],
+            [
+                'kategori_id'   => $katElektronik->id,
+                'stok_total'    => 4,
+                'stok_tersedia' => 4,
+                'lokasi'        => 'Lemari Sekretariat',
+                'kondisi'       => 'Baik',
+                'foto_url'      => 'barang/mic.jpg',
+                'deskripsi'     => 'Satu set isi 2 mic tanpa kabel',
+            ]
+        );
 
-        // --- TAMBAHAN BARANG BARU ---
-        $barang4 = Barang::create([
-            'nama_barang' => 'Tenda Dome 4x6',
-            'kategori_id' => $katPesta->id,
-            'stok_total' => 2,
-            'stok_tersedia' => 2,
-            'lokasi' => 'Samping Masjid',
-            'kondisi' => 'Baik',
-            'foto' => 'barang/tenda.jpg',
-            'deskripsi' => 'Tenda kapasitas besar untuk acara warga'
-        ]);
+        $barang3 = Barang::firstOrCreate(
+            ['nama_barang' => 'Vacuum Cleaner Sharp'],
+            [
+                'kategori_id'   => $katKebersihan->id,
+                'stok_total'    => 2,
+                'stok_tersedia' => 1,
+                'lokasi'        => 'Ruang Marbot',
+                'kondisi'       => 'Baik',
+                'foto_url'      => 'barang/vacuum.jpg',
+                'deskripsi'     => 'Alat penyedot debu karpet masjid',
+            ]
+        );
 
-        $barang5 = Barang::create([
-            'nama_barang' => 'Genset Honda 2500W',
-            'kategori_id' => $katElektronik->id,
-            'stok_total' => 1,
-            'stok_tersedia' => 1,
-            'lokasi' => 'Parkiran Dalam',
-            'kondisi' => 'Baik',
-            'foto' => 'barang/genset.jpg',
-            'deskripsi' => 'Pembangkit listrik cadangan'
-        ]);
+        $barang4 = Barang::firstOrCreate(
+            ['nama_barang' => 'Tenda Dome 4x6'],
+            [
+                'kategori_id'   => $katPesta->id,
+                'stok_total'    => 2,
+                'stok_tersedia' => 2,
+                'lokasi'        => 'Samping Masjid',
+                'kondisi'       => 'Baik',
+                'foto_url'      => 'barang/tenda.jpg',
+                'deskripsi'     => 'Tenda kapasitas besar untuk acara warga',
+            ]
+        );
 
-        $barang6 = Barang::create([
-            'nama_barang' => 'Kursi Roda',
-            'kategori_id' => $katMedis->id,
-            'stok_total' => 1,
-            'stok_tersedia' => 1,
-            'lokasi' => 'Ruang Posyandu',
-            'kondisi' => 'Baik',
-            'foto' => 'barang/kursiroda.jpg',
-            'deskripsi' => 'Kursi roda untuk warga lansia/sakit'
-        ]);
+        $barang5 = Barang::firstOrCreate(
+            ['nama_barang' => 'Genset Honda 2500W'],
+            [
+                'kategori_id'   => $katElektronik->id,
+                'stok_total'    => 1,
+                'stok_tersedia' => 1,
+                'lokasi'        => 'Parkiran Dalam',
+                'kondisi'       => 'Baik',
+                'foto_url'      => 'barang/genset.jpg',
+                'deskripsi'     => 'Pembangkit listrik cadangan',
+            ]
+        );
 
-        $barang7 = Barang::create([
-            'nama_barang' => 'Speaker Aktif Polytron',
-            'kategori_id' => $katElektronik->id,
-            'stok_total' => 2,
-            'stok_tersedia' => 2,
-            'lokasi' => 'Gudang Depan',
-            'kondisi' => 'Rusak Ringan',
-            'foto' => 'barang/speaker.jpg',
-            'deskripsi' => 'Speaker aktif untuk pengajian kecil'
-        ]);
+        $barang6 = Barang::firstOrCreate(
+            ['nama_barang' => 'Kursi Roda'],
+            [
+                'kategori_id'   => $katMedis->id,
+                'stok_total'    => 1,
+                'stok_tersedia' => 1,
+                'lokasi'        => 'Ruang Posyandu',
+                'kondisi'       => 'Baik',
+                'foto_url'      => 'barang/kursiroda.jpg',
+                'deskripsi'     => 'Kursi roda untuk warga lansia/sakit',
+            ]
+        );
 
-        // 3. Isi data Warga
-        $warga1 = Warga::create([
-            'nama_warga' => 'H. Ahmad Subarjo',
-            'no_hp' => '081234567890',
-            'alamat' => 'Jl. Masjid No. 12',
-            'rt_rw' => '001/005'
-        ]);
+        $barang7 = Barang::firstOrCreate(
+            ['nama_barang' => 'Speaker Aktif Polytron'],
+            [
+                'kategori_id'   => $katElektronik->id,
+                'stok_total'    => 2,
+                'stok_tersedia' => 2,
+                'lokasi'        => 'Gudang Depan',
+                'kondisi'       => 'Rusak Ringan',
+                'foto_url'      => 'barang/speaker.jpg',
+                'deskripsi'     => 'Speaker aktif untuk pengajian kecil',
+            ]
+        );
 
-        $warga2 = Warga::create([
-            'nama_warga' => 'Ibu Siti Aminah',
-            'no_hp' => '085711223344',
-            'alamat' => 'Gang Damai No. 5',
-            'rt_rw' => '003/005'
-        ]);
+        // 4. Warga — pakai firstOrCreate berdasarkan no_hp (unik)
+        $warga1 = Warga::firstOrCreate(
+            ['no_hp' => '081234567890'],
+            [
+                'nama_warga' => 'H. Ahmad Subarjo',
+                'alamat'     => 'Jl. Masjid No. 12',
+                'rt_rw'      => '001/005',
+            ]
+        );
 
-        // --- TAMBAHAN WARGA BARU ---
-        $warga3 = Warga::create([
-            'nama_warga' => 'Bpk. Bambang Heru',
-            'no_hp' => '081399887766',
-            'alamat' => 'Perumahan Ar-Rayyan Blok C1',
-            'rt_rw' => '002/005'
-        ]);
+        $warga2 = Warga::firstOrCreate(
+            ['no_hp' => '085711223344'],
+            [
+                'nama_warga' => 'Ibu Siti Aminah',
+                'alamat'     => 'Gang Damai No. 5',
+                'rt_rw'      => '003/005',
+            ]
+        );
 
-        $warga4 = Warga::create([
-            'nama_warga' => 'Rudi Setiawan',
-            'no_hp' => '089900112233',
-            'alamat' => 'Kostan Hijau No. 10',
-            'rt_rw' => '002/005'
-        ]);
+        $warga3 = Warga::firstOrCreate(
+            ['no_hp' => '081399887766'],
+            [
+                'nama_warga' => 'Bpk. Bambang Heru',
+                'alamat'     => 'Perumahan Ar-Rayyan Blok C1',
+                'rt_rw'      => '002/005',
+            ]
+        );
 
-        // 4. Tambahan: Data Peminjaman Aktif & Telat (Opsional biar Dashboard Lu rame)
-        if (class_exists('App\Models\Peminjaman')) {
-            Peminjaman::create([
-                'warga_id' => $warga1->id,
+        $warga4 = Warga::firstOrCreate(
+            ['no_hp' => '089900112233'],
+            [
+                'nama_warga' => 'Rudi Setiawan',
+                'alamat'     => 'Kostan Hijau No. 10',
+                'rt_rw'      => '002/005',
+            ]
+        );
+
+        // 5. Peminjaman — pakai firstOrCreate agar tidak duplikat
+        Peminjaman::firstOrCreate(
+            [
+                'warga_id'  => $warga1->id,
                 'barang_id' => $barang1->id,
-                'jumlah' => 20,
-                'tgl_pinjam' => Carbon::now()->subDays(2),
-                'tgl_rencana_kembali' => Carbon::now()->addDays(2),
-                'keperluan' => 'Acara tasyakuran warga',
-                'status' => 'Aktif',
-                'kondisi_pinjam' => 'Baik',
-                'marbot_id' => 1
-            ]);
+                'status'    => 'Aktif',
+            ],
+            [
+                'jumlah'               => 20,
+                'tgl_pinjam'           => Carbon::now()->subDays(2)->toDateString(),
+                'tgl_rencana_kembali'  => Carbon::now()->addDays(2)->toDateString(),
+                'keperluan'            => 'Acara tasyakuran warga',
+                'kondisi_pinjam'       => 'Baik',
+                'marbot_id'            => $marbot->id,
+            ]
+        );
 
-            Peminjaman::create([
-                'warga_id' => $warga2->id,
+        Peminjaman::firstOrCreate(
+            [
+                'warga_id'  => $warga2->id,
                 'barang_id' => $barang3->id,
-                'jumlah' => 1,
-                'tgl_pinjam' => Carbon::now()->subDays(5),
-                'tgl_rencana_kembali' => Carbon::now()->subDays(1), // H-1 (Biar statusnya TELAT)
-                'keperluan' => 'Pembersihan karpet mushola RT',
-                'status' => 'Aktif',
-                'kondisi_pinjam' => 'Baik',
-                'marbot_id' => 1
-            ]);
-            
-            // --- TAMBAHAN SKENARIO RUSAK/BATAL ---
-            Peminjaman::create([
-                'warga_id' => $warga4->id,
+                'status'    => 'Aktif',
+            ],
+            [
+                'jumlah'               => 1,
+                'tgl_pinjam'           => Carbon::now()->subDays(5)->toDateString(),
+                'tgl_rencana_kembali'  => Carbon::now()->subDays(1)->toDateString(),
+                'keperluan'            => 'Pembersihan karpet mushola RT',
+                'kondisi_pinjam'       => 'Baik',
+                'marbot_id'            => $marbot->id,
+            ]
+        );
+
+        Peminjaman::firstOrCreate(
+            [
+                'warga_id'  => $warga4->id,
                 'barang_id' => $barang2->id,
-                'jumlah' => 1,
-                'tgl_pinjam' => Carbon::now()->subDays(10),
-                'tgl_rencana_kembali' => Carbon::now()->subDays(7),
-                'keperluan' => 'Latihan hadroh',
-                'status' => 'Rusak/Hilang',
-                'kondisi_pinjam' => 'Baik',
-                'marbot_id' => 1
-            ]);
-        }
+                'status'    => 'Rusak/Hilang',
+            ],
+            [
+                'jumlah'               => 1,
+                'tgl_pinjam'           => Carbon::now()->subDays(10)->toDateString(),
+                'tgl_rencana_kembali'  => Carbon::now()->subDays(7)->toDateString(),
+                'keperluan'            => 'Latihan hadroh',
+                'kondisi_pinjam'       => 'Baik',
+                'marbot_id'            => $marbot->id,
+            ]
+        );
     }
 }

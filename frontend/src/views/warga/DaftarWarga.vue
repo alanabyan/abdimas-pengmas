@@ -78,9 +78,9 @@
                         <thead>
                             <tr>
                                 <th>Nama Warga</th>
-                                <th>No. HP</th>
-                                <th>Alamat</th>
-                                <th>RT/RW</th>
+                                <th class="th-hp">No. HP</th>
+                                <th class="th-alamat">Alamat</th>
+                                <th class="th-rtrw">RT/RW</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -100,7 +100,7 @@
                                 </td>
                                 <td class="td-hp">{{ w.no_hp }}</td>
                                 <td class="td-alamat">{{ w.alamat }}</td>
-                                <td>
+                                <td class="td-rtrw">
                                     <span class="badge-rtrw" :class="{ 'badge-rtrw--warn': hasAktif(w) }">
                                         {{ w.rt_rw || '—' }}
                                     </span>
@@ -404,6 +404,14 @@ onMounted(() => fetchData())
 <style scoped>
 .warga-page {
     font-family: 'DM Sans', 'Inter', sans-serif;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
 /* ── Header ──────────────────────────────────────────────────────── */
@@ -1137,6 +1145,9 @@ onMounted(() => fetchData())
 }
 
 /* ── Responsive ──────────────────────────────────────────────────── */
+/* Ganti seluruh bagian @media di bawah */
+
+/* 900px: hilangkan kolom Alamat */
 @media (max-width: 900px) {
     .main-grid {
         grid-template-columns: 1fr;
@@ -1152,17 +1163,24 @@ onMounted(() => fetchData())
 
     .stat-card--green {
         flex: 1;
+        min-width: 0;
     }
 
     .stat-row {
         flex: 1;
+        min-width: 0;
     }
 
     .td-alamat {
         display: none;
     }
+
+    .th-alamat {
+        display: none;
+    }
 }
 
+/* 600px: hilangkan kolom No. HP */
 @media (max-width: 600px) {
     .stat-grid {
         flex-direction: column;
@@ -1170,6 +1188,116 @@ onMounted(() => fetchData())
 
     .td-hp {
         display: none;
+    }
+
+    .th-hp {
+        display: none;
+    }
+
+    .page-top {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-add {
+        justify-content: center;
+    }
+
+    .toolbar {
+        flex-direction: column;
+    }
+
+    .filter-select {
+        width: 100%;
+    }
+}
+
+/* 420px: hilangkan kolom RT/RW */
+@media (max-width: 420px) {
+    .td-rtrw {
+        display: none;
+    }
+
+    .th-rtrw {
+        display: none;
+    }
+
+    .pg-title {
+        font-size: 17px;
+    }
+
+    .warga-table th,
+    .warga-row td {
+        padding: 9px 8px;
+    }
+
+    .detail-card {
+        padding: 12px;
+    }
+
+    .detail-header {
+        flex-wrap: wrap;
+    }
+
+    .btn-edit-sm {
+        width: 100%;
+        text-align: center;
+        margin-top: 8px;
+    }
+
+    .detail-field {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .field-val {
+        text-align: left;
+    }
+
+    .modal {
+        padding: 16px;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .btn-cancel,
+    .btn-confirm-delete {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* 320px: kolom Aksi lebih kecil */
+@media (max-width: 320px) {
+    .act-btn {
+        width: 26px;
+        height: 26px;
+    }
+
+    .action-btns {
+        gap: 2px;
+    }
+
+    .warga-name {
+        font-size: 11px;
+    }
+
+    .warga-avatar {
+        width: 26px;
+        height: 26px;
+        font-size: 10px;
+    }
+
+    .search-input {
+        font-size: 12px;
+    }
+
+    .pag-btn {
+        min-width: 24px;
+        height: 24px;
+        font-size: 11px;
     }
 }
 </style>

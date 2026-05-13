@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Barang extends Model
 {
@@ -59,6 +60,14 @@ class Barang extends Model
     public function getStokDipinjamAttribute(): int
     {
         return $this->stok_total - $this->stok_tersedia;
+    }
+
+    /** Generate full URL untuk foto */
+    public function getFotoUrlAttribute($value): ?string
+    {
+        if (!$value) return null;
+        if (str_starts_with($value, 'http')) return $value;
+        return url(Storage::url($value));
     }
 
     // ── Scope ────────────────────────────────────────────────────────────
