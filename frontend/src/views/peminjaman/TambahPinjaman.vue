@@ -1,7 +1,6 @@
 <template>
   <div class="page">
 
-    <!-- Back -->
     <div class="back-row">
       <router-link to="/peminjaman" class="back-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -11,7 +10,6 @@
       </router-link>
     </div>
 
-    <!-- Header -->
     <div class="page-header">
       <div class="header-left">
         <div class="header-icon">
@@ -29,14 +27,11 @@
       </div>
     </div>
 
-    <!-- Form card -->
     <div class="form-card">
       <form @submit.prevent="simpanData" class="form-inner">
 
-        <!-- Row 1: Warga + Kategori -->
         <div class="form-row">
 
-          <!-- Searchable Warga -->
           <div class="form-group" style="position: relative;">
             <label class="form-label">Peminjam (Warga)</label>
             <div class="search-select" :class="{ error: errors.warga_id, open: dropdownOpen }">
@@ -71,7 +66,6 @@
           </div>
         </div>
 
-        <!-- Barang -->
         <div class="form-group">
           <label class="form-label">Barang</label>
           <div class="search-select" :class="{ error: errors.barang_id }">
@@ -102,7 +96,6 @@
           <span v-if="errors.barang_id" class="err-msg">{{ errors.barang_id }}</span>
         </div>
 
-        <!-- Row 2: Jumlah + Kondisi -->
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Jumlah Pinjam</label>
@@ -127,7 +120,6 @@
           </div>
         </div>
 
-        <!-- Keperluan -->
         <div class="form-group">
           <label class="form-label">Keperluan</label>
           <textarea v-model="form.keperluan" required rows="3" placeholder="Tuliskan keperluan peminjaman..."
@@ -135,7 +127,6 @@
           <span v-if="errors.keperluan" class="err-msg">{{ errors.keperluan }}</span>
         </div>
 
-        <!-- Row 3: Tanggal -->
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Tanggal Pinjam</label>
@@ -152,10 +143,8 @@
           </div>
         </div>
 
-        <!-- Server error -->
         <div v-if="serverError" class="server-error">{{ serverError }}</div>
 
-        <!-- Footer -->
         <div class="form-footer">
           <router-link to="/peminjaman" class="btn-cancel">Batal</router-link>
           <button type="submit" :disabled="stokTerlampaui || submitting"
@@ -168,7 +157,6 @@
       </form>
     </div>
 
-    <!-- Toast -->
     <Teleport to="body">
       <Transition name="toast">
         <div v-if="toast.show" :class="['toast', `toast-${toast.type}`]">
@@ -797,14 +785,45 @@ textarea.form-control {
   transform: translateY(8px);
 }
 
-/* ─────────────────────────── Responsive ────────────────────── */
-@media (max-width: 640px) {
+/* ── RESPONSIVE MODE ────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
   .page {
-    padding: 16px;
+    padding: 16px 20px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .form-card {
+    padding: 20px;
   }
 
   .form-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Row berubah jadi 1 kolom */
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-footer {
+    flex-direction: column; /* Tombol numpuk vertikal */
+    gap: 12px;
+  }
+
+  .btn-submit, .btn-cancel {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .btn-submit {
+    order: 1;
+  }
+  
+  .btn-cancel {
+    order: 2;
   }
 }
 </style>

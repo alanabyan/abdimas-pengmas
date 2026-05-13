@@ -1,7 +1,6 @@
 <template>
   <div class="page">
 
-    <!-- Header -->
     <div class="page-header">
       <div class="header-left">
         <div class="header-icon">
@@ -17,7 +16,6 @@
       </div>
     </div>
 
-    <!-- Stats -->
     <div class="stats-row">
       <div class="stat-card" v-for="s in stats" :key="s.label" :style="{ '--accent': s.color }">
         <span class="stat-num">{{ s.value }}</span>
@@ -26,10 +24,8 @@
       </div>
     </div>
 
-    <!-- Table card -->
     <div class="table-card">
 
-      <!-- Loading skeleton -->
       <div v-if="loading" class="skeleton-wrap">
         <div v-for="i in 5" :key="i" class="skel-row">
           <div class="skel-avatar"></div>
@@ -43,7 +39,6 @@
         </div>
       </div>
 
-      <!-- Empty -->
       <div v-else-if="listData.length === 0" class="empty">
         <div class="empty-ico">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
@@ -55,7 +50,6 @@
         <p class="empty-sub">Semua barang telah dikembalikan</p>
       </div>
 
-      <!-- Table -->
       <table v-else class="data-table">
         <thead>
           <tr>
@@ -70,7 +64,6 @@
         <tbody>
           <tr v-for="(item, idx) in listData" :key="item.id" class="data-row"
             :style="{ animationDelay: `${idx * 35}ms` }">
-            <!-- Peminjam -->
             <td>
               <div class="person-cell">
                 <div class="avatar" :style="{ background: avatarColor(item.warga?.nama_warga) }">
@@ -83,12 +76,10 @@
               </div>
             </td>
 
-            <!-- Barang & Kategori -->
             <td>
               <div class="barang-name">{{ item.barang?.nama_barang ?? '-' }}</div>
             </td>
 
-            <!-- Jumlah -->
             <td>
               <div class="qty-cell">
                 <span class="qty-badge">{{ item.jumlah }}</span>
@@ -98,12 +89,10 @@
               </div>
             </td>
 
-            <!-- Tgl Pinjam -->
             <td>
               <span class="date-text">{{ fmtDate(item.tgl_pinjam) }}</span>
             </td>
 
-            <!-- Batas Kembali -->
             <td>
               <span class="date-text" :class="{ overdue: isOverdue(item) }">
                 {{ fmtDate(item.tgl_rencana_kembali) }}
@@ -111,7 +100,6 @@
               </span>
             </td>
 
-            <!-- Aksi -->
             <td>
               <div class="action-group">
                 <button class="act-btn act-proses" title="Proses Kembali" @click="bukaValidasi(item)">
@@ -128,10 +116,8 @@
       </table>
     </div>
 
-    <!-- Modal ValidasiKembali -->
     <ValidasiKembali v-if="isModalOpen" :dataPinjam="selectedItem" @close="isModalOpen = false" @success="fetchData" />
 
-    <!-- Toast -->
     <Teleport to="body">
       <Transition name="toast">
         <div v-if="toast.show" :class="['toast', `toast-${toast.type}`]">
@@ -681,20 +667,72 @@ onMounted(fetchData)
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .page {
-    padding: 16px;
+    padding: 16px 20px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 
   .stats-row {
     flex-wrap: wrap;
+    gap: 10px;
   }
 
   .stat-card {
-    min-width: calc(50% - 7px);
+    min-width: calc(50% - 5px);
+    padding: 14px;
   }
 
-  .data-table th:nth-child(4),
-  .data-table td:nth-child(4) {
+  .stat-num {
+    font-size: 22px;
+  }
+
+  /* Table to Card Layout */
+  .data-table thead {
     display: none;
+  }
+
+  .data-row {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+    border-bottom: 6px solid #F4F6F9;
+  }
+
+  .data-table td {
+    display: block;
+    padding: 0;
+    border: none;
+  }
+
+  .action-group {
+    padding-top: 10px;
+    border-top: 1px solid #f1f4f9;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .act-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 11px;
+  }
+
+  .toast {
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-card {
+    min-width: 100%;
   }
 }
 </style>

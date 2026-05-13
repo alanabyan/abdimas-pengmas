@@ -1,7 +1,6 @@
 <template>
     <div class="page">
 
-        <!-- Back -->
         <div class="back-row">
             <router-link to="/peminjaman" class="back-link">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -11,7 +10,6 @@
             </router-link>
         </div>
 
-        <!-- Loading -->
         <div v-if="store.loading" class="detail-skel">
             <div class="skel-head"></div>
             <div class="skel-body">
@@ -19,17 +17,14 @@
             </div>
         </div>
 
-        <!-- Not found -->
         <div v-else-if="!p" class="not-found">
             <p>Data peminjaman tidak ditemukan.</p>
             <router-link to="/peminjaman" class="btn-primary">Kembali</router-link>
         </div>
 
-        <!-- Content -->
         <template v-else>
             <div class="detail-grid">
 
-                <!-- Card Utama -->
                 <div class="main-card">
                     <div class="card-header">
                         <div class="card-title-row">
@@ -55,7 +50,6 @@
                             <span class="field-value mono">{{ p.jumlah }} unit</span>
                         </div>
 
-                        <!-- Tambahan: jumlah kembali jika ada -->
                         <div v-if="p.jumlah_kembali" class="field">
                             <span class="field-label">Sudah Dikembalikan</span>
                             <span class="field-value mono"
@@ -83,10 +77,8 @@
                     </div>
                 </div>
 
-                <!-- Sidebar -->
                 <div class="sidebar">
 
-                    <!-- Timeline tanggal -->
                     <div class="side-card">
                         <h3 class="side-title">Tanggal</h3>
                         <div class="timeline">
@@ -122,11 +114,9 @@
                         </div>
                     </div>
 
-                    <!-- Aksi -->
                     <div class="side-card">
                         <h3 class="side-title">Aksi</h3>
                         <div class="action-list">
-                            <!-- Konfirmasi -->
                             <button v-if="p.status === 'Menunggu'" class="act-full act-green" :disabled="actionLoading"
                                 @click="handleKonfirmasi">
                                 <span v-if="actionLoading === 'konfirmasi'" class="spinner"></span>
@@ -136,7 +126,6 @@
                                 Konfirmasi Peminjaman
                             </button>
 
-                            <!-- Edit -->
                             <router-link v-if="p.status === 'Menunggu'" :to="`/peminjaman/${p.id}/edit`"
                                 class="act-full act-yellow">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -146,7 +135,6 @@
                                 Edit Peminjaman
                             </router-link>
 
-                            <!-- Batal -->
                             <button v-if="p.status === 'Menunggu' || p.status === 'Aktif'" class="act-full act-red"
                                 :disabled="actionLoading" @click="showBatal = true">
                                 <span v-if="actionLoading === 'batal'" class="spinner"></span>
@@ -157,7 +145,6 @@
                                 Batalkan Peminjaman
                             </button>
 
-                            <!-- Info Sebagian Kembali -->
                             <div v-if="p.status === 'Sebagian Kembali'" class="act-info act-info--amber">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="10" />
@@ -171,7 +158,6 @@
                                 </span>
                             </div>
 
-                            <!-- Info selesai/batal/rusak-hilang -->
                             <div v-if="['Selesai', 'Batal', 'Rusak/Hilang'].includes(p.status)" class="act-info">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="10" />
@@ -185,11 +171,9 @@
                         </div>
                     </div>
 
-                    <!-- Info kondisi pengembalian jika sudah ada -->
                     <div v-if="p.kondisi_kembali || p.jumlah_kembali" class="side-card">
                         <h3 class="side-title">Kondisi Pengembalian</h3>
 
-                        <!-- Progress bar jika sebagian -->
                         <div v-if="p.status === 'Sebagian Kembali'" class="return-progress">
                             <div class="return-progress-bar-wrap">
                                 <div class="return-progress-bar-fill"
@@ -214,7 +198,6 @@
             </div>
         </template>
 
-        <!-- Modal Batal -->
         <Teleport to="body">
             <Transition name="modal">
                 <div v-if="showBatal" class="modal-backdrop" @click.self="showBatal = false">
@@ -244,7 +227,6 @@
             </Transition>
         </Teleport>
 
-        <!-- Toast -->
         <Teleport to="body">
             <Transition name="toast">
                 <div v-if="toast.show" :class="['toast', `toast-${toast.type}`]">
@@ -523,7 +505,7 @@ onMounted(() => store.fetchPeminjaman(route.params.id))
 
 .act-info--amber {
     background: #fffbeb;
-    border: 1px solid #16a34a;
+    border: 1px solid #fbbf24;
     color: #92400e;
     border-radius: 8px;
 }
@@ -967,21 +949,65 @@ onMounted(() => store.fetchPeminjaman(route.params.id))
     transform: translateY(8px);
 }
 
+/* ── RESPONSIVE MODE ────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    .detail-grid {
+        grid-template-columns: 1fr 280px;
+    }
+}
+
 @media (max-width: 768px) {
     .page {
-        padding: 16px;
+        padding: 16px 20px;
     }
 
     .detail-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .fields-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr; /* Sidebar pindah ke bawah Main Card */
+        gap: 16px;
     }
 
     .card-header {
         flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .fields-grid {
+        grid-template-columns: 1fr; /* Field berjejer satu kolom ke bawah */
+        padding: 8px 16px 16px;
+    }
+
+    .field {
+        padding: 12px 0;
+    }
+
+    .sidebar {
+        order: 2; /* Sidebar di bawah */
+    }
+
+    .main-card {
+        order: 1; /* Main Card di atas */
+    }
+}
+
+@media (max-width: 480px) {
+    .page {
+        padding: 12px 16px;
+    }
+
+    .avatar-lg {
+        width: 44px;
+        height: 44px;
+        font-size: 16px;
+    }
+
+    .warga-name {
+        font-size: 18px;
+    }
+
+    .act-full {
+        padding: 12px;
+        font-size: 13px;
     }
 }
 </style>

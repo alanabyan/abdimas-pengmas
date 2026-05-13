@@ -1,7 +1,6 @@
 <template>
   <div class="page">
 
-    <!-- Header -->
     <div class="page-header">
       <div class="header-left">
         <div class="header-icon">
@@ -25,7 +24,6 @@
       </router-link>
     </div>
 
-    <!-- Stats -->
     <div class="stats-row">
       <div class="stat-card" v-for="s in stats" :key="s.label" :style="{ '--accent': s.color }">
         <span class="stat-num">{{ s.value }}</span>
@@ -34,7 +32,6 @@
       </div>
     </div>
 
-    <!-- Toolbar -->
     <div class="toolbar">
       <div class="search-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -52,9 +49,7 @@
       </div>
     </div>
 
-    <!-- Table -->
     <div class="table-card">
-      <!-- Loading skeleton -->
       <div v-if="store.loading" class="skeleton-wrap">
         <div v-for="i in 6" :key="i" class="skel-row">
           <div class="skel-avatar"></div>
@@ -68,7 +63,6 @@
         </div>
       </div>
 
-      <!-- Empty -->
       <div v-else-if="!filteredPeminjamans.length" class="empty">
         <div class="empty-ico">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
@@ -80,7 +74,6 @@
         <p class="empty-sub">Coba ubah filter atau tambah peminjaman baru</p>
       </div>
 
-      <!-- Table content -->
       <table v-else class="data-table">
         <thead>
           <tr>
@@ -161,7 +154,6 @@
         </tbody>
       </table>
 
-      <!-- Pagination -->
       <div v-if="store.meta.last_page > 1" class="pagination">
         <button class="pg-btn" :disabled="store.meta.current_page === 1" @click="goPage(store.meta.current_page - 1)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -178,7 +170,6 @@
       </div>
     </div>
 
-    <!-- Modal konfirmasi batal -->
     <Teleport to="body">
       <Transition name="modal">
         <div v-if="showBatal" class="modal-backdrop" @click.self="showBatal = false">
@@ -208,7 +199,6 @@
       </Transition>
     </Teleport>
 
-    <!-- Toast -->
     <Teleport to="body">
       <Transition name="toast">
         <div v-if="toast.show" :class="['toast', `toast-${toast.type}`]">
@@ -1130,20 +1120,91 @@ onMounted(() => {
   transform: translateY(8px);
 }
 
+/* ── RESPONSIVE MODE ────────────────────────────────────────────────────── */
+@media (max-width: 992px) {
+  .stat-card {
+    min-width: calc(33.33% - 14px);
+  }
+}
+
 @media (max-width: 768px) {
   .page {
-    padding: 16px;
+    padding: 16px 20px;
   }
 
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Stat Cards */
   .stat-card {
-    min-width: calc(33% - 10px);
+    min-width: calc(50% - 14px);
   }
 
-  .data-table th:nth-child(4),
-  .data-table td:nth-child(4),
-  .data-table th:nth-child(5),
-  .data-table td:nth-child(5) {
+  /* Table to Card Layout */
+  .data-table thead {
     display: none;
+  }
+
+  .data-row {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+    border-bottom: 6px solid #F4F6F9;
+  }
+
+  .data-table td {
+    display: block;
+    padding: 0;
+    border: none;
+  }
+
+  .action-group {
+    justify-content: flex-start;
+    padding-top: 12px;
+    border-top: 1px solid #f1f4f9;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .act-btn {
+    flex: 1;
+    height: 36px;
+  }
+
+  /* Toolbar */
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-wrap {
+    max-width: none;
+  }
+
+  .filter-chips {
+    overflow-x: auto;
+    padding-bottom: 8px;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chip {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-card {
+    min-width: 100%;
   }
 }
 </style>

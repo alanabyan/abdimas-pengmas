@@ -1,6 +1,5 @@
 <template>
   <div class="marbot-page">
-    <!-- Header -->
     <div class="page-header">
       <div class="header-left">
         <div class="header-icon">
@@ -25,7 +24,6 @@
       </button>
     </div>
 
-    <!-- Stats Bar -->
     <div class="stats-bar">
       <div class="stat-item">
         <span class="stat-number">{{ marbots.length }}</span>
@@ -43,7 +41,6 @@
       </div>
     </div>
 
-    <!-- Toolbar -->
     <div class="toolbar">
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -66,9 +63,7 @@
       </div>
     </div>
 
-    <!-- Table -->
     <div class="table-wrapper">
-      <!-- Loading skeleton -->
       <div v-if="store.loading" class="skeleton-list">
         <div v-for="i in 5" :key="i" class="skeleton-row">
           <div class="skeleton-avatar"></div>
@@ -81,7 +76,6 @@
         </div>
       </div>
 
-      <!-- Empty state -->
       <div v-else-if="filteredMarbots.length === 0" class="empty-state">
         <div class="empty-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
@@ -95,7 +89,6 @@
         <p class="empty-desc">Coba ubah filter atau tambah marbot baru</p>
       </div>
 
-      <!-- Table content -->
       <table v-else class="marbot-table">
         <thead>
           <tr>
@@ -131,19 +124,16 @@
             </td>
             <td>
               <div class="action-group">
-                <!-- Edit: super admin bisa edit siapa saja, marbot biasa hanya diri sendiri -->
                 <button v-if="authStore.user?.is_super_admin || marbot.id === authStore.user?.id"
                   class="action-btn btn-edit" @click="openEditModal(marbot)" title="Edit">
                   <EditIcon />
                 </button>
 
-                <!-- Reset Password: hanya super admin -->
                 <button v-if="authStore.user?.is_super_admin && marbot.id !== authStore.user?.id"
                   class="action-btn btn-reset" @click="openResetModal(marbot)" title="Reset Password">
                   <KeyRound />
                 </button>
 
-                <!-- Nonaktifkan: hanya super admin, tidak bisa ke diri sendiri -->
                 <button v-if="authStore.user?.is_super_admin && marbot.id !== authStore.user?.id"
                   class="action-btn btn-delete" @click="confirmDelete(marbot)" title="Nonaktifkan"
                   :disabled="!marbot.aktif">
@@ -159,9 +149,6 @@
       </table>
     </div>
 
-    <!-- ======================================= -->
-    <!-- MODAL: Tambah / Edit Marbot             -->
-    <!-- ======================================= -->
     <Teleport to="body">
       <Transition name="modal">
         <div v-if="showFormModal" class="modal-backdrop" @click.self="closeFormModal">
@@ -237,7 +224,6 @@
                 </div>
               </template>
 
-              <!-- Server error -->
               <div v-if="serverError" class="server-error">{{ serverError }}</div>
 
               <div class="modal-footer">
@@ -253,9 +239,6 @@
       </Transition>
     </Teleport>
 
-    <!-- ======================================= -->
-    <!-- MODAL: Reset Password                   -->
-    <!-- ======================================= -->
     <Teleport to="body">
       <Transition name="modal">
         <div v-if="showResetModal" class="modal-backdrop" @click.self="showResetModal = false">
@@ -312,9 +295,6 @@
       </Transition>
     </Teleport>
 
-    <!-- ======================================= -->
-    <!-- MODAL: Konfirmasi Nonaktifkan           -->
-    <!-- ======================================= -->
     <Teleport to="body">
       <Transition name="modal">
         <div v-if="showDeleteModal" class="modal-backdrop" @click.self="showDeleteModal = false">
@@ -344,7 +324,6 @@
       </Transition>
     </Teleport>
 
-    <!-- Toast notification -->
     <Transition name="toast">
       <div v-if="toast.show" :class="['toast', `toast-${toast.type}`]">
         <svg v-if="toast.type === 'success'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1541,28 +1520,143 @@ async function submitDelete() {
   transform: translateY(8px);
 }
 
-/* ── Responsive ────────────────────────────────────────────────────────── */
+/* ── RESPONSIVE MODE ────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .marbot-page {
+    padding: 16px 20px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stats-bar {
+    width: 100%;
+    justify-content: space-between;
     padding: 16px;
+    gap: 8px;
+  }
+
+  .stat-number {
+    font-size: 18px;
   }
 
   .toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
 
   .search-box {
-    max-width: 100%;
+    max-width: none;
   }
 
-  .marbot-table {
-    font-size: 13px;
+  .filter-tabs {
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .marbot-table th:nth-child(4),
-  .marbot-table td:nth-child(4) {
+  .filter-tab {
+    flex: 1;
+    white-space: nowrap;
+  }
+
+  /* Table to Card Layout */
+  .marbot-table thead {
     display: none;
+  }
+
+  .table-row {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+    border-bottom: 6px solid #F4F6F9;
+  }
+
+  .marbot-table td {
+    display: block;
+    padding: 0;
+    border: none;
+  }
+
+  .marbot-email {
+    display: block;
+    margin-left: 48px; /* Align with name (avatar width + gap) */
+  }
+
+  .date-text {
+    display: block;
+    margin-left: 48px;
+  }
+
+  .action-group {
+    justify-content: flex-start;
+    padding-top: 12px;
+    border-top: 1px solid #f1f4f9;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .action-btn {
+    flex: 1;
+    height: 38px;
+  }
+
+  /* Modal Mobile */
+  .modal {
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-submit, .btn-cancel {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .btn-submit {
+    order: 1;
+  }
+
+  .btn-cancel {
+    order: 2;
+  }
+
+  .toast {
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-left {
+    gap: 10px;
+  }
+
+  .header-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .page-title {
+    font-size: 18px;
   }
 }
 </style>

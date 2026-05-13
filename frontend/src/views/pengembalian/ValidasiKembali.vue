@@ -2,7 +2,6 @@
   <div v-if="dataPinjam" class="modal-backdrop" @click.self="$emit('close')">
     <div class="modal-box">
 
-      <!-- Header -->
       <div class="modal-header">
         <div class="header-left">
           <div class="header-icon">
@@ -23,10 +22,8 @@
         </button>
       </div>
 
-      <!-- Body -->
       <div class="modal-body">
 
-        <!-- Info peminjam -->
         <div class="info-card">
           <div class="info-row">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -48,7 +45,6 @@
           </div>
         </div>
 
-        <!-- Progress pengembalian jika sudah ada sebagian -->
         <div v-if="sudahKembali > 0" class="progress-card">
           <div class="progress-header">
             <span class="progress-label">Progress Pengembalian</span>
@@ -60,7 +56,6 @@
           <p class="progress-hint">Sisa <strong>{{ sisaBelum }} unit</strong> belum dikembalikan</p>
         </div>
 
-        <!-- Jumlah dikembalikan -->
         <div class="field-group">
           <label class="field-label">Jumlah Dikembalikan Sekarang</label>
           <div class="jumlah-wrapper">
@@ -77,7 +72,6 @@
           </p>
         </div>
 
-        <!-- Kondisi selector -->
         <div class="field-group">
           <label class="field-label">Kondisi Saat Ini</label>
           <div class="kondisi-grid">
@@ -97,7 +91,6 @@
           </transition>
         </div>
 
-        <!-- Catatan -->
         <div class="field-group">
           <label class="field-label">
             Catatan Marbot
@@ -120,7 +113,6 @@
 
       </div>
 
-      <!-- Footer -->
       <div class="modal-footer">
         <button type="button" class="btn-batal" @click="$emit('close')">Batal</button>
         <button type="button" class="btn-simpan" :disabled="loading || !canSubmit" @click="submitValidasi">
@@ -299,7 +291,7 @@ const submitValidasi = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  z-index: 1000;
   padding: 16px;
 }
 
@@ -378,7 +370,7 @@ const submitValidasi = async () => {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-height: 75vh;
+  max-height: 70vh;
   overflow-y: auto;
 }
 
@@ -830,5 +822,67 @@ const submitValidasi = async () => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-4px);
+}
+
+/* ── RESPONSIVE MODE ────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .modal-backdrop {
+    padding: 12px;
+  }
+
+  .modal-box {
+    border-radius: 16px;
+    max-height: 95vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-header {
+    padding: 14px 16px;
+  }
+
+  .modal-body {
+    padding: 16px;
+    gap: 14px;
+    /* Jaga body tetap bisa scroll tapi box nggak lari */
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  /* Grid kondisi jadi satu kolom kalau layar sempit banget */
+  .kondisi-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .kondisi-btn {
+    padding: 12px;
+  }
+
+  .modal-footer {
+    padding: 14px 16px;
+    flex-direction: column-reverse; /* Tombol batal di bawah */
+    gap: 10px;
+  }
+
+  .btn-simpan, .btn-batal {
+    width: 100%;
+    flex: none;
+    padding: 12px;
+  }
+
+  .btn-simpan {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 400px) {
+  .header-left span {
+    font-size: 13px;
+  }
+  
+  .info-val {
+    font-size: 12px;
+  }
 }
 </style>

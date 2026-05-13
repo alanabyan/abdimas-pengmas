@@ -25,14 +25,12 @@
             </div>
         </div>
 
-        <!-- Loading -->
         <div v-if="store.loading" class="form-card">
             <div class="skel-body">
                 <div v-for="i in 8" :key="i" class="skel-field"></div>
             </div>
         </div>
 
-        <!-- Tidak bisa edit -->
         <div v-else-if="p && p.status !== 'Menunggu'" class="locked-notice">
             <div class="locked-ico">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -49,11 +47,9 @@
             <router-link :to="`/peminjaman/${route.params.id}`" class="btn-primary">Lihat Detail</router-link>
         </div>
 
-        <!-- Form -->
         <div v-else-if="p" class="form-card">
             <form @submit.prevent="submitEdit" class="form-inner">
 
-                <!-- Warga (Searchable Dropdown) -->
                 <div class="form-group" style="position: relative;">
                     <label>Peminjam (Warga)</label>
                     <div class="search-select" :class="{ error: errors.warga_id, focused: dropdownOpen }">
@@ -91,7 +87,6 @@
                     <span v-if="errors.warga_id" class="err-msg">{{ errors.warga_id }}</span>
                 </div>
 
-                <!-- Barang (readonly) -->
                 <div class="form-group">
                     <label>Barang</label>
                     <div class="readonly-field">
@@ -105,7 +100,6 @@
                 </div>
 
                 <div class="form-row">
-                    <!-- Jumlah -->
                     <div class="form-group">
                         <label>Jumlah Pinjam</label>
                         <input v-model.number="form.jumlah" type="number" min="1" :max="stokMaks" required
@@ -117,18 +111,17 @@
                         <span v-else-if="stokMaks !== null" class="hint-msg">Stok tersedia: {{ stokMaks }} unit</span>
                     </div>
 
-                    <!-- Kondisi -->
                     <div class="form-group">
                         <label>Kondisi Barang</label>
                         <select v-model="form.kondisi_pinjam" required :class="{ error: errors.kondisi_pinjam }">
                             <option value="Baik">Baik</option>
                             <option value="Rusak Ringan">Rusak Ringan</option>
+                            <option value="Rusak Berat">Rusak Berat</option>
                         </select>
                         <span v-if="errors.kondisi_pinjam" class="err-msg">{{ errors.kondisi_pinjam }}</span>
                     </div>
                 </div>
 
-                <!-- Keperluan -->
                 <div class="form-group">
                     <label>Keperluan</label>
                     <textarea v-model="form.keperluan" required rows="3" placeholder="Tuliskan keperluan peminjaman..."
@@ -137,14 +130,12 @@
                 </div>
 
                 <div class="form-row">
-                    <!-- Tgl Pinjam -->
                     <div class="form-group">
                         <label>Tanggal Pinjam</label>
                         <input v-model="form.tgl_pinjam" type="date" required :class="{ error: errors.tgl_pinjam }" />
                         <span v-if="errors.tgl_pinjam" class="err-msg">{{ errors.tgl_pinjam }}</span>
                     </div>
 
-                    <!-- Tgl Rencana Kembali -->
                     <div class="form-group">
                         <label>Rencana Kembali</label>
                         <input v-model="form.tgl_rencana_kembali" type="date" required :min="form.tgl_pinjam"
@@ -153,10 +144,8 @@
                     </div>
                 </div>
 
-                <!-- Server error -->
                 <div v-if="serverError" class="server-error">{{ serverError }}</div>
 
-                <!-- Footer -->
                 <div class="form-footer">
                     <router-link :to="`/peminjaman/${route.params.id}`" class="btn-cancel">Batal</router-link>
                     <button type="submit" :disabled="submitting || stokTerlampaui"
@@ -168,7 +157,6 @@
             </form>
         </div>
 
-        <!-- Toast -->
         <Teleport to="body">
             <Transition name="toast">
                 <div v-if="toast.show" :class="['toast', `toast-${toast.type}`]">
@@ -915,17 +903,52 @@ onMounted(async () => {
     transform: translateY(8px);
 }
 
-@media (max-width: 640px) {
+/* ── RESPONSIVE MODE ────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
     .page {
-        padding: 16px;
+        padding: 16px 20px;
+    }
+
+    .form-card {
+        padding: 20px;
     }
 
     .form-row {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr; /* Form row jadi 1 kolom */
+        gap: 16px;
     }
 
     .skel-body {
         grid-template-columns: 1fr;
+    }
+
+    .readonly-hint {
+        display: none; /* Sembunyikan hint kecil biar gak sesak */
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .form-footer {
+        flex-direction: column; /* Tombol batal & simpan jadi numpuk */
+    }
+
+    .btn-submit, .btn-cancel {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .btn-submit {
+        order: 1; /* Simpan di atas */
+    }
+
+    .btn-cancel {
+        order: 2; /* Batal di bawah */
     }
 }
 </style>
