@@ -45,7 +45,7 @@
                                 <rect x="14" y="14" width="7" height="7" />
                             </svg>
                         </button>
-                        <button class="view-btn" :class="{ 'view-btn--active': viewMode === 'list' }"
+                        <button class="view-btn list-hide" :class="{ 'view-btn--active': viewMode === 'list' }"
                             @click="viewMode = 'list'" title="Tampilan list">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" width="14" height="14">
@@ -1791,6 +1791,10 @@ onMounted(() => store.fetchKategoris())
 @media (max-width: 600px) {
     .stat-grid {
         flex-direction: column;
+    }
+
+    .list-hide {
+        display: hidden;
     }
 
     .kategori-grid {

@@ -85,85 +85,143 @@
                         </RouterLink>
                     </div>
 
-                    <!-- Table content -->
-                    <table v-else class="barang-table">
-                        <thead>
-                            <tr>
-                                <th>Nama Barang</th>
-                                <th>Stok</th>
-                                <th>Kondisi</th>
-                                <th>Lokasi</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="b in barangs" :key="b.id" class="barang-row"
-                                :class="{ 'barang-row--active': selectedBarang?.id === b.id }" @click="selectBarang(b)">
-                                <td>
-                                    <div class="barang-cell">
-                                        <div class="barang-img-wrap">
-                                            <img v-if="b.foto_url" :src="b.foto_url" :alt="b.nama_barang" class="barang-img" />
-                                            <div v-else class="barang-img-placeholder"
-                                                :style="{ background: itemColor(b.nama_barang) }">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="1.8" stroke-linecap="round" width="16" height="16"
-                                                    style="color:white; opacity:0.8">
-                                                    <rect x="2" y="7" width="20" height="14" rx="2" />
-                                                    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-                                                </svg>
+                    <!-- Table content: desktop -->
+                    <div v-else class="table-scroll">
+                        <table class="barang-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama Barang</th>
+                                    <th class="col-stok">Stok</th>
+                                    <th>Kondisi</th>
+                                    <th class="col-lokasi">Lokasi</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="b in barangs" :key="b.id" class="barang-row"
+                                    :class="{ 'barang-row--active': selectedBarang?.id === b.id }"
+                                    @click="selectBarang(b)">
+                                    <td>
+                                        <div class="barang-cell">
+                                            <div class="barang-img-wrap">
+                                                <img v-if="b.foto_url" :src="b.foto_url" :alt="b.nama_barang"
+                                                    class="barang-img" />
+                                                <div v-else class="barang-img-placeholder"
+                                                    :style="{ background: itemColor(b.nama_barang) }">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="1.8" stroke-linecap="round" width="16" height="16"
+                                                        style="color:white; opacity:0.8">
+                                                        <rect x="2" y="7" width="20" height="14" rx="2" />
+                                                        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p class="barang-name">{{ b.nama_barang }}</p>
+                                                <p class="barang-kategori">{{ b.kategori?.nama ?? '—' }}</p>
                                             </div>
                                         </div>
-                                        <div>
-                                            <p class="barang-name">{{ b.nama_barang }}</p>
-                                            <p class="barang-kategori">{{ b.kategori?.nama ?? '—' }}</p>
+                                    </td>
+                                    <td class="col-stok">
+                                        <div class="stok-wrap">
+                                            <span class="stok-tersedia">{{ b.stok_tersedia }}</span>
+                                            <span class="stok-sep">/</span>
+                                            <span class="stok-total">{{ b.stok_total }}</span>
                                         </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="stok-wrap">
-                                        <span class="stok-tersedia">{{ b.stok_tersedia }}</span>
-                                        <span class="stok-sep">/</span>
-                                        <span class="stok-total">{{ b.stok_total }}</span>
-                                    </div>
-                                    <div class="stok-bar">
-                                        <div class="stok-bar__fill" :style="{ width: stokPct(b) + '%' }"
-                                            :class="stokBarClass(b)">
+                                        <div class="stok-bar">
+                                            <div class="stok-bar__fill" :style="{ width: stokPct(b) + '%' }"
+                                                :class="stokBarClass(b)">
+                                            </div>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge-kondisi" :class="kondisiClass(b.kondisi)">{{ b.kondisi
+                                            }}</span>
+                                    </td>
+                                    <td class="td-lokasi col-lokasi">{{ b.lokasi || '—' }}</td>
+                                    <td>
+                                        <div class="action-btns">
+                                            <RouterLink :to="`/barang/${b.id}`" class="act-btn act-btn--view"
+                                                title="Lihat detail">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" width="14" height="14">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                    <circle cx="12" cy="12" r="3" />
+                                                </svg>
+                                            </RouterLink>
+                                            <RouterLink :to="`/barang/${b.id}/edit`" class="act-btn act-btn--edit"
+                                                title="Edit" @click.stop>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" width="14" height="14">
+                                                    <path
+                                                        d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                </svg>
+                                            </RouterLink>
+                                            <button @click.stop="confirmDelete(b)" class="act-btn act-btn--delete">
+                                                <Trash2 size="14" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Card list: mobile (ditampilkan via CSS di layar kecil) -->
+                    <div v-if="barangs.length" class="card-list">
+                        <div v-for="b in barangs" :key="'card-' + b.id" class="item-card"
+                            :class="{ 'item-card--active': selectedBarang?.id === b.id }" @click="selectBarang(b)">
+                            <div class="item-card-top">
+                                <div class="barang-img-wrap">
+                                    <img v-if="b.foto_url" :src="b.foto_url" :alt="b.nama_barang" class="barang-img" />
+                                    <div v-else class="barang-img-placeholder"
+                                        :style="{ background: itemColor(b.nama_barang) }">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                                            stroke-linecap="round" width="14" height="14"
+                                            style="color:white; opacity:0.8">
+                                            <rect x="2" y="7" width="20" height="14" rx="2" />
+                                            <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                                        </svg>
                                     </div>
-                                </td>
-                                <td>
-                                    <span class="badge-kondisi" :class="kondisiClass(b.kondisi)">{{ b.kondisi }}</span>
-                                </td>
-                                <td class="td-lokasi">{{ b.lokasi || '—' }}</td>
-                                <td>
-                                    <div class="action-btns">
-                                        <RouterLink :to="`/barang/${b.id}`" class="act-btn act-btn--view" title="Lihat detail">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                                stroke-linecap="round" width="14" height="14">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                                <circle cx="12" cy="12" r="3" />
-                                            </svg>
-                                        </RouterLink>
-                                        <RouterLink :to="`/barang/${b.id}/edit`" class="act-btn act-btn--edit"
-                                            title="Edit" @click.stop>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                                stroke-linecap="round" width="14" height="14">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                            </svg>
-                                        </RouterLink>
-                                        <button @click=confirmDelete(b) class="act-btn">
-                                            <Trash2 size="16" />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                </div>
+                                <div class="item-card-info">
+                                    <p class="barang-name">{{ b.nama_barang }}</p>
+                                    <p class="barang-kategori">{{ b.kategori?.nama ?? '—' }}</p>
+                                </div>
+                                <span class="badge-kondisi" :class="kondisiClass(b.kondisi)">{{ b.kondisi }}</span>
+                            </div>
+                            <div class="item-card-bottom">
+                                <span class="stok-label">Stok: <strong class="stok-tersedia">{{ b.stok_tersedia
+                                        }}</strong><span class="stok-sep">/</span><span class="stok-total">{{
+                                        b.stok_total }}</span></span>
+                                <div class="action-btns">
+                                    <RouterLink :to="`/barang/${b.id}`" class="act-btn act-btn--view" title="Lihat">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" width="13" height="13">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                            <circle cx="12" cy="12" r="3" />
+                                        </svg>
+                                    </RouterLink>
+                                    <RouterLink :to="`/barang/${b.id}/edit`" class="act-btn act-btn--edit" title="Edit"
+                                        @click.stop>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" width="13" height="13">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                        </svg>
+                                    </RouterLink>
+                                    <button @click.stop="confirmDelete(b)" class="act-btn act-btn--delete">
+                                        <Trash2 size="13" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Pagination -->
                     <div v-if="meta.last_page > 1" class="pagination">
-                        <span class="pag-info">Menampilkan {{ paginationInfo }}</span>
+                        <span class="pag-info">{{ paginationInfo }}</span>
                         <div class="pag-btns">
                             <button class="pag-btn" :disabled="meta.current_page === 1"
                                 @click="fetchData(meta.current_page - 1)">
@@ -202,17 +260,15 @@
                     <div class="stat-row">
                         <div class="stat-card stat-card--sm">
                             <p class="stat-val stat-val--sm">{{ statsTersedia }}</p>
-                            <p class="stat-label">Tersedia</p>
+                            <p class="stat-label stat-label--dark">Tersedia</p>
                         </div>
                         <div class="stat-card stat-card--sm">
                             <p class="stat-val stat-val--sm">{{ statsDipinjam }}</p>
-                            <p class="stat-label">Dipinjam</p>
+                            <p class="stat-label stat-label--dark">Dipinjam</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Detail barang -->
-                
                 <!-- Kondisi summary -->
                 <div class="kondisi-card" v-if="barangs.length">
                     <p class="activity-title">Ringkasan Kondisi</p>
@@ -276,7 +332,6 @@ import { Trash2 } from 'lucide-vue-next'
 const store = useBarangStore()
 const toast = useToast()
 
-// ── State ──────────────────────────────────────────────────────────
 const search = ref('')
 const filterKondisi = ref('')
 const filterTersedia = ref(false)
@@ -286,7 +341,6 @@ const deleteTarget = ref(null)
 const deleting = ref(false)
 let searchTimer = null
 
-// ── Computed dari store ─────────────────────────────────────────────
 const barangs = computed(() => store.barangs)
 const meta = computed(() => store.meta)
 const loading = computed(() => store.loading)
@@ -311,8 +365,6 @@ const paginationInfo = computed(() => {
 const statsTersedia = computed(() => barangs.value.filter(b => (b.stok_tersedia ?? 0) > 0).length)
 const statsDipinjam = computed(() => barangs.value.reduce((acc, b) => acc + (b.stok_dipinjam ?? 0), 0))
 
-
-// ── Methods ─────────────────────────────────────────────────────────
 async function fetchData(page = 1) {
     await store.fetchBarangs({
         page,
@@ -361,7 +413,6 @@ async function doDelete() {
     }
 }
 
-// ── Helpers visual ──────────────────────────────────────────────────
 const COLORS = ['#16a34a', '#0891b2', '#7c3aed', '#db2777', '#ea580c', '#ca8a04', '#059669', '#2563eb']
 
 function itemColor(nama = '') {
@@ -392,7 +443,6 @@ function kondisiCount(kondisi) {
     return barangs.value.filter(b => b.kondisi === kondisi).length
 }
 
-// ── Init ────────────────────────────────────────────────────────────
 onMounted(() => fetchData())
 </script>
 
@@ -462,7 +512,7 @@ onMounted(() => fetchData())
 
 .search-wrap {
     flex: 1;
-    min-width: 200px;
+    min-width: 180px;
     position: relative;
     display: flex;
     align-items: center;
@@ -512,6 +562,7 @@ onMounted(() => fetchData())
     display: flex;
     gap: 8px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .filter-select {
@@ -567,8 +618,15 @@ onMounted(() => fetchData())
     overflow: hidden;
 }
 
+/* Scrollable wrapper for table on small screens */
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .barang-table {
     width: 100%;
+    min-width: 480px;
     border-collapse: collapse;
     font-size: 13px;
 }
@@ -774,6 +832,12 @@ onMounted(() => fetchData())
     color: #2563eb;
 }
 
+.act-btn--delete:hover {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #dc2626;
+}
+
 /* Skeleton */
 .skeleton-wrap {
     padding: 8px 0;
@@ -853,6 +917,7 @@ onMounted(() => fetchData())
 .pag-btns {
     display: flex;
     gap: 4px;
+    flex-wrap: wrap;
 }
 
 .pag-btn {
@@ -928,6 +993,10 @@ onMounted(() => fetchData())
     font-weight: 500;
 }
 
+.stat-label--dark {
+    color: #9ca3af;
+}
+
 .stat-row {
     display: flex;
     gap: 8px;
@@ -940,319 +1009,6 @@ onMounted(() => fetchData())
 .stat-val--sm {
     font-size: 22px;
     color: #111827;
-}
-
-.stat-card--sm .stat-label {
-    color: #9ca3af;
-}
-
-/* Detail card */
-.detail-card {
-    background: white;
-    border-radius: 12px;
-    border: 1px solid #f0f0f0;
-    padding: 0;
-    overflow: hidden;
-}
-
-/* Foto */
-.detail-foto-wrap {
-    position: relative;
-    width: 100%;
-    height: 130px;
-    background: #f9fafb;
-}
-
-.detail-foto {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.detail-foto-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.foto-upload-btn {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    width: 28px;
-    height: 28px;
-    background: rgba(0, 0, 0, 0.55);
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: white;
-    transition: background 0.15s;
-}
-
-.foto-upload-btn:hover {
-    background: rgba(0, 0, 0, 0.75);
-}
-
-.foto-input {
-    display: none;
-}
-
-.foto-delete-btn {
-    position: absolute;
-    bottom: 8px;
-    right: 42px;
-    width: 28px;
-    height: 28px;
-    background: rgba(220, 38, 38, 0.75);
-    border: none;
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: white;
-    transition: background 0.15s;
-}
-
-.foto-delete-btn:hover {
-    background: rgba(220, 38, 38, 0.95);
-}
-
-.detail-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 14px 16px 10px;
-}
-
-.detail-meta {
-    flex: 1;
-    min-width: 0;
-}
-
-.detail-name {
-    font-size: 14px;
-    font-weight: 700;
-    color: #111827;
-    margin: 0;
-}
-
-.detail-kategori {
-    font-size: 11px;
-    color: #9ca3af;
-    font-weight: 500;
-    display: block;
-    margin-top: 2px;
-}
-
-.btn-edit-sm {
-    font-size: 11.5px;
-    font-weight: 600;
-    color: #16a34a;
-    border: 1px solid #86efac;
-    padding: 5px 10px;
-    border-radius: 7px;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: all 0.15s;
-    flex-shrink: 0;
-}
-
-.btn-edit-sm:hover {
-    background: #f0fdf4;
-}
-
-/* Stok detail box */
-.stok-detail-box {
-    display: flex;
-    align-items: center;
-    background: #f9fafb;
-    border-top: 1px solid #f0f0f0;
-    border-bottom: 1px solid #f0f0f0;
-    padding: 12px 0;
-    margin-bottom: 0;
-}
-
-.stok-detail-item {
-    flex: 1;
-    text-align: center;
-}
-
-.stok-detail-val {
-    font-size: 20px;
-    font-weight: 800;
-    color: #111827;
-    margin: 0;
-    line-height: 1;
-}
-
-.stok-detail-val--green {
-    color: #16a34a;
-}
-
-.stok-detail-val--orange {
-    color: #f59e0b;
-}
-
-.stok-detail-label {
-    font-size: 10px;
-    color: #9ca3af;
-    font-weight: 500;
-    margin: 3px 0 0;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.stok-detail-divider {
-    width: 1px;
-    height: 32px;
-    background: #e5e7eb;
-    flex-shrink: 0;
-}
-
-/* Detail fields */
-.detail-fields {
-    display: flex;
-    flex-direction: column;
-    padding: 0 16px;
-}
-
-.detail-field {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 9px 0;
-    border-bottom: 1px solid #f9fafb;
-    font-size: 12.5px;
-}
-
-.detail-field:last-child {
-    border-bottom: none;
-}
-
-.field-label {
-    color: #9ca3af;
-    font-weight: 500;
-    flex-shrink: 0;
-}
-
-.field-val {
-    color: #111827;
-    font-weight: 500;
-    text-align: right;
-}
-
-.field-val--desc {
-    font-size: 12px;
-    color: #6b7280;
-    font-weight: 400;
-    line-height: 1.5;
-    text-align: right;
-    max-width: 160px;
-}
-
-/* Riwayat */
-.riwayat-box {
-    border-top: 1px solid #f0f0f0;
-    padding: 12px 16px 8px;
-}
-
-.riwayat-title {
-    font-size: 11px;
-    font-weight: 700;
-    color: #374151;
-    margin: 0 0 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-}
-
-.riwayat-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 5px 0;
-}
-
-.riwayat-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-top: 4px;
-    flex-shrink: 0;
-}
-
-.riwayat-dot--aktif {
-    background: #16a34a;
-}
-
-.riwayat-dot--terlambat {
-    background: #ef4444;
-}
-
-.riwayat-dot--selesai {
-    background: #94a3b8;
-}
-
-.riwayat-dot--default {
-    background: #d1d5db;
-}
-
-.riwayat-name {
-    font-size: 12px;
-    font-weight: 600;
-    color: #111827;
-    margin: 0;
-}
-
-.riwayat-date {
-    font-size: 11px;
-    color: #9ca3af;
-    margin: 1px 0 0;
-}
-
-/* Hapus */
-.btn-delete {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 12px 16px 16px;
-    background: none;
-    border: 1px solid #fecaca;
-    color: #dc2626;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 7px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.15s;
-    width: calc(100% - 32px);
-    justify-content: center;
-    font-family: inherit;
-}
-
-.btn-delete:hover {
-    background: #fef2f2;
-}
-
-/* Placeholder */
-.detail-placeholder {
-    background: white;
-    border-radius: 12px;
-    border: 1px solid #f0f0f0;
-    padding: 32px 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    color: #9ca3af;
-    font-size: 13px;
-    text-align: center;
 }
 
 /* Kondisi card */
@@ -1372,6 +1128,7 @@ onMounted(() => fetchData())
     display: flex;
     gap: 8px;
     justify-content: flex-end;
+    flex-wrap: wrap;
 }
 
 .btn-cancel {
@@ -1412,7 +1169,82 @@ onMounted(() => fetchData())
     cursor: not-allowed;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────── */
+/* ── Card list (default: hidden, tampil di mobile) ─────────────────────── */
+.card-list {
+    display: none;
+    flex-direction: column;
+    gap: 0;
+}
+
+.item-card {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.item-card:last-child {
+    border-bottom: none;
+}
+
+.item-card:hover,
+.item-card--active {
+    background: #f0fdf4;
+}
+
+.item-card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.item-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.item-card-info .barang-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.stok-label {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Safety: pastikan tidak ada overflow di semua ukuran ─────────────────── */
+.barang-page,
+.main-grid,
+.left-col,
+.right-col,
+.table-card,
+.toolbar {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* ── 1100px: kolom kanan mulai sempit ────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .main-grid {
+        grid-template-columns: 1fr 240px;
+    }
+}
+
+/* ── 900px: single column, right col naik ke atas ────────────────────────── */
 @media (max-width: 900px) {
     .main-grid {
         grid-template-columns: 1fr;
@@ -1424,6 +1256,7 @@ onMounted(() => fetchData())
 
     .stat-grid {
         flex-direction: row;
+        align-items: stretch;
     }
 
     .stat-card--green {
@@ -1434,18 +1267,237 @@ onMounted(() => fetchData())
         flex: 1;
     }
 
-    .td-lokasi {
+    .kondisi-card {
         display: none;
     }
 }
 
-@media (max-width: 600px) {
-    .stat-grid {
+/* ── 768px: tablet portrait ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .pg-title {
+        font-size: 18px;
+    }
+
+    .pg-sub {
+        font-size: 12px;
+    }
+
+    .col-lokasi {
+        display: none;
+    }
+
+    .toolbar {
+        gap: 8px;
+    }
+
+    .filter-select {
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+
+    .filter-toggle {
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+}
+
+/* ── 640px: mobile — switch ke card list ─────────────────────────────────── */
+@media (max-width: 640px) {
+    .page-top {
+        align-items: center;
+        gap: 10px;
+    }
+
+    .pg-sub {
+        display: none;
+    }
+
+    .toolbar {
         flex-direction: column;
+        gap: 8px;
+    }
+
+    .search-wrap {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .filter-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .filter-select {
+        flex: 1;
+    }
+
+    /* Sembunyikan tabel, tampilkan card list */
+    .table-scroll {
+        display: none;
+    }
+
+    .card-list {
+        display: flex;
     }
 
     .stok-bar {
         display: none;
+    }
+
+    .stat-grid {
+        flex-direction: column;
+    }
+
+    .stat-row {
+        flex-direction: row;
+    }
+
+    .pag-info {
+        display: none;
+    }
+
+    .pagination {
+        justify-content: flex-end;
+    }
+
+    .modal {
+        padding: 20px 16px;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .btn-cancel,
+    .btn-confirm-delete {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* ── 420px: mobile XS ────────────────────────────────────────────────────── */
+@media (max-width: 420px) {
+    .btn-add {
+        font-size: 12px;
+        padding: 8px 10px;
+        gap: 4px;
+    }
+
+    .pg-title {
+        font-size: 16px;
+    }
+
+    .stat-val {
+        font-size: 22px;
+    }
+
+    .stat-val--sm {
+        font-size: 18px;
+    }
+}
+
+/* ── 360px: very small phones ────────────────────────────────────────────── */
+@media (max-width: 360px) {
+    .barang-page {
+        /* Cegah konten memaksa lebar */
+        overflow-x: hidden;
+    }
+
+    .page-top {
+        gap: 8px;
+    }
+
+    .btn-add span {
+        display: none;
+    }
+
+    /* Sembunyikan teks, tampilkan icon saja */
+
+    .btn-add {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 9px;
+        flex-shrink: 0;
+    }
+
+    .search-input {
+        font-size: 12px;
+        padding: 8px 28px 8px 32px;
+    }
+
+    .filter-select {
+        font-size: 11px;
+        padding: 7px 6px;
+        min-width: 0;
+    }
+
+    .filter-toggle {
+        font-size: 11px;
+        padding: 7px 8px;
+    }
+
+    .item-card {
+        padding: 10px 12px;
+    }
+
+    .barang-img-wrap {
+        width: 30px;
+        height: 30px;
+    }
+
+    .barang-name {
+        font-size: 12px;
+    }
+
+    .barang-kategori {
+        font-size: 10px;
+    }
+
+    .badge-kondisi {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    .act-btn {
+        width: 26px;
+        height: 26px;
+    }
+
+    .stat-card {
+        padding: 10px 12px;
+    }
+
+    .stat-val {
+        font-size: 20px;
+    }
+
+    .stat-val--sm {
+        font-size: 16px;
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    .pag-btn {
+        min-width: 26px;
+        height: 26px;
+        font-size: 11px;
+    }
+
+    .modal {
+        padding: 16px 12px;
+        border-radius: 12px;
+    }
+
+    .modal-title {
+        font-size: 14px;
+    }
+
+    .modal-body {
+        font-size: 12.5px;
     }
 }
 </style>

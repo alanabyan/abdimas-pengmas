@@ -20,4 +20,8 @@ export default {
 
     downloadKerusakanPdf: (params) =>
         api.get('/laporan/kerusakan/pdf', { params, responseType: 'blob' }).then(r => r.data),
+
+    getStokPdf() {
+        return api.get('laporan/stok/pdf', { responseType: 'blob' })
+    }
 }

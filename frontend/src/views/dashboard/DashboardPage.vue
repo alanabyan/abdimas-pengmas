@@ -43,7 +43,6 @@
             <h3 class="chart-title">Tren Peminjaman per Kategori</h3>
             <p class="chart-sub">12 bulan terakhir</p>
           </div>
-          <!-- Legend dinamis dari data -->
           <div class="chart-legend-wrap">
             <template v-if="!loading && grafikPeminjaman.length">
               <div v-for="(kat, i) in grafikPeminjaman" :key="i" class="legend-item">
@@ -171,12 +170,10 @@ const grafikPeminjaman = ref([])
 const barChartCanvas = ref(null)
 let barChartInstance = null
 
-// ── Tanggal ───────────────────────────────────────────────────────────────
 const hariIni = new Date().toLocaleDateString('id-ID', {
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
 })
 
-// ── Stat Cards ────────────────────────────────────────────────────────────
 const statCards = [
   { key: 'total_barang', label: 'Total Barang', variant: 'card-blue', color: '#1e3a5f', icon: Package },
   { key: 'total_kategori', label: 'Kategori', variant: 'card-indigo', color: '#6366f1', icon: Tag },
@@ -186,7 +183,6 @@ const statCards = [
   { key: 'barang_rusak_hilang', label: 'Rusak / Hilang', variant: 'card-red', color: '#dc2626', icon: AlertTriangle },
 ]
 
-// ── Quick Links ───────────────────────────────────────────────────────────
 const quickLinks = [
   { to: '/peminjaman/tambah', label: 'Tambah Peminjaman', bg: '#eff6ff', color: '#1e3a5f', icon: Plus },
   { to: '/peminjaman', label: 'Daftar Peminjaman', bg: '#f0fdf4', color: '#16a34a', icon: ClipboardList },
@@ -196,10 +192,8 @@ const quickLinks = [
   { to: '/pengembalian', label: 'Validasi Pengembalian', bg: '#fef2f2', color: '#dc2626', icon: RotateCcw },
 ]
 
-// ── Warna palette ─────────────────────────────────────────────────────────
 const barColors = ['#1e3a5f', '#6366f1', '#0891b2', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#be185d', '#0f766e']
 
-// ── Bar chart inventaris ───────────────────────────────────────────────────
 const grafikBarangSorted = computed(() =>
   [...grafikBarang.value].sort((a, b) => b.jumlah_barang - a.jumlah_barang),
 )
@@ -207,14 +201,12 @@ const maxBarang = computed(() =>
   Math.max(...grafikBarangSorted.value.map(i => i.jumlah_barang), 1),
 )
 
-// ── Helper: format label bulan ────────────────────────────────────────────
 function formatBulan(label) {
   if (!label) return ''
   const [, m] = label.split('-')
   return ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][parseInt(m) - 1] ?? label
 }
 
-// ── Render grouped bar chart ──────────────────────────────────────────────
 async function renderBarChart() {
   await nextTick()
   if (!barChartCanvas.value || !grafikPeminjaman.value.length) return
@@ -224,7 +216,6 @@ async function renderBarChart() {
     barChartInstance = null
   }
 
-  // Ambil label bulan dari dataset pertama
   const labels = grafikPeminjaman.value[0]?.data.map(d => formatBulan(d.bulan)) ?? []
 
   const datasets = grafikPeminjaman.value.map((kat, i) => {
@@ -232,7 +223,7 @@ async function renderBarChart() {
     return {
       label: kat.label,
       data: kat.data.map(d => d.total),
-      backgroundColor: color + 'cc',   // sedikit transparan
+      backgroundColor: color + 'cc',
       borderColor: color,
       borderWidth: 1.5,
       borderRadius: 4,
@@ -280,12 +271,10 @@ async function renderBarChart() {
   })
 }
 
-// Re-render chart saat data berubah
 watch(grafikPeminjaman, () => {
   if (grafikPeminjaman.value.length) renderBarChart()
 }, { deep: true })
 
-// ── Fetch ─────────────────────────────────────────────────────────────────
 async function loadAll(isRefresh = false) {
   if (isRefresh) refreshing.value = true
   else loading.value = true
@@ -316,6 +305,7 @@ onBeforeUnmount(() => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
+/* ── Base ─────────────────────────────────────────────────────────────── */
 .page {
   font-family: 'Plus Jakarta Sans', sans-serif;
   padding: 28px 32px;
@@ -330,12 +320,14 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 26px;
+  gap: 12px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 
 .header-icon {
@@ -361,39 +353,13 @@ onBeforeUnmount(() => {
   font-size: 13px;
   color: #7a8499;
   margin: 2px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .page-sub strong {
   color: #1a1f2e;
-}
-
-.btn-refresh {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  border: 1.5px solid #e8ecf4;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #7a8499;
-  transition: all .2s;
-}
-
-.btn-refresh:hover {
-  border-color: #1e3a5f;
-  color: #1e3a5f;
-}
-
-.btn-refresh.spinning :deep(svg) {
-  animation: spin .8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* ── Stat Cards ─────────────────────────────────────────────────────────── */
@@ -524,6 +490,7 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   padding: 20px 22px 0;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .chart-title {
@@ -539,7 +506,6 @@ onBeforeUnmount(() => {
   margin: 2px 0 0;
 }
 
-/* Legend dinamis */
 .chart-legend-wrap {
   display: flex;
   flex-wrap: wrap;
@@ -585,7 +551,6 @@ onBeforeUnmount(() => {
   color: #d8dde8;
 }
 
-/* Bar chart wrapper */
 .bar-chart-wrap {
   position: relative;
   height: 200px;
@@ -596,7 +561,6 @@ onBeforeUnmount(() => {
   height: 200px !important;
 }
 
-/* Skeleton bar chart */
 .chart-skel {
   display: flex;
   align-items: flex-end;
@@ -791,10 +755,21 @@ onBeforeUnmount(() => {
   }
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────── */
-@media (max-width: 1200px) {
+/* ══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1400px: stat cards mulai mampet, kurangi kolom ─────────────────────── */
+@media (max-width: 1400px) {
   .stats-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ── 1200px: chart narrow tidak cukup lebar ─────────────────────────────── */
+@media (max-width: 1200px) {
+  .charts-row {
+    grid-template-columns: 1fr 300px;
   }
 
   .quick-grid {
@@ -802,27 +777,215 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (max-width: 900px) {
+/* ── 1024px: sidebar mungkin muncul, ruang lebih sempit ─────────────────── */
+@media (max-width: 1024px) {
+  .page {
+    padding: 24px;
+  }
+
   .charts-row {
     grid-template-columns: 1fr;
   }
+
+  /* chart narrow jadi full width, tinggi bar list diatur ulang */
+  .chart-narrow .bar-list {
+    height: auto;
+    max-height: 280px;
+  }
+
+  .chart-legend-wrap {
+    max-width: 100%;
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    gap: 8px;
+  }
 }
 
+/* ── 900px ───────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .quick-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── 768px: tablet portrait ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .page {
+    padding: 20px;
+  }
+
+  .page-title {
+    font-size: 19px;
+  }
+
+  .page-sub {
+    font-size: 12px;
+  }
+
+  .header-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stat-num {
+    font-size: 24px;
+  }
+
+  .quick-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .quick-card {
+    padding: 12px 14px;
+  }
+
+  .quick-label {
+    font-size: 12px;
+  }
+}
+
+/* ── 640px: mobile landscape / kecil ────────────────────────────────────── */
 @media (max-width: 640px) {
   .page {
     padding: 16px;
   }
 
+  .page-header {
+    margin-bottom: 18px;
+  }
+
+  .page-title {
+    font-size: 17px;
+  }
+
+  .header-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    padding: 14px 16px 12px;
+    border-radius: 12px;
+  }
+
+  .stat-num {
+    font-size: 22px;
+    min-height: 28px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+
+  .stat-icon-wrap {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+
+  .charts-row {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .chart-card {
+    border-radius: 12px;
+  }
+
+  .chart-header {
+    padding: 16px 16px 0;
+  }
+
+  .chart-body {
+    padding: 12px 16px 16px;
+  }
+
+  .chart-title {
+    font-size: 14px;
   }
 
   .quick-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
-  .chart-legend-wrap {
-    max-width: 100%;
+  .quick-card {
+    padding: 11px 12px;
+    border-radius: 10px;
+    gap: 8px;
+  }
+
+  .quick-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+
+  .quick-label {
+    font-size: 11.5px;
+  }
+
+  .quick-arrow {
+    display: none;
+  }
+}
+
+/* ── 420px: mobile XS ────────────────────────────────────────────────────── */
+@media (max-width: 420px) {
+  .page {
+    padding: 12px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 12px 12px 10px;
+  }
+
+  .stat-num {
+    font-size: 20px;
+  }
+
+  .quick-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-card {
+    padding: 12px 14px;
+  }
+
+  .quick-arrow {
+    display: block;
+  }
+
+  /* Pada layar sangat kecil, page-sub bisa wrap */
+  .page-sub {
+    white-space: normal;
   }
 }
 </style>

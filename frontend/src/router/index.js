@@ -27,6 +27,7 @@ import TambahKategori from '@/views/kategori/TambahKategori.vue'
 import DetailBarang from '@/views/barang/DetailBarang.vue'
 import PeminjamanDetail from '@/views/peminjaman/PeminjamanDetail.vue'
 import PeminjamanEdit from '@/views/peminjaman/PeminjamanEdit.vue'
+import GuideBook from '@/views/guideBook/GuideBook.vue'
 
 // --- Import Komponen (PENGEMBALIAN) ---
 const DaftarPengembalian = () => import('@/views/pengembalian/DaftarPengembalian.vue')
@@ -65,6 +66,13 @@ const routes = [
         name: 'Dashboard',
         component: () => import('../views/dashboard/DashboardPage.vue'),
         meta: { title: 'Dashboard' }
+      },
+
+      {
+        path: '/guide-book',
+        name: 'Guide Book',
+        component: GuideBook,
+        meta: {title: 'Panduan Sistem'},
       },
 
       // Warga

@@ -198,6 +198,43 @@ class LaporanController extends Controller
         ]);
     }
 
+    /**
+     * GET /api/v1/laporan/stok/pdf
+     * Unduh PDF laporan stok barang.
+     */
+    public function stokPdf(): Response
+    {
+        $kategoris = Kategori::with([
+            'barangs:id,kategori_id,nama_barang,stok_total,stok_tersedia,kondisi,lokasi',
+        ])
+            ->withCount('barangs')
+            ->orderBy('nama')
+            ->get();
+
+        $summary = $kategoris->map(fn($k) => [
+            'kategori'      => $k->nama,
+            'jumlah_barang' => $k->barangs_count,
+            'stok_total'    => $k->barangs->sum('stok_total'),
+            'stok_tersedia' => $k->barangs->sum('stok_tersedia'),
+            'stok_dipinjam' => $k->barangs->sum('stok_total') - $k->barangs->sum('stok_tersedia'),
+            'barangs'       => $k->barangs,
+        ]);
+
+        $grandTotal = [
+            'stok_total'    => $summary->sum('stok_total'),
+            'stok_tersedia' => $summary->sum('stok_tersedia'),
+            'stok_dipinjam' => $summary->sum('stok_dipinjam'),
+        ];
+
+        $pdf = Pdf::loadView('laporan.stok', [
+            'kategoris'   => $summary,
+            'grand_total' => $grandTotal,
+            'tanggal'     => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('laporan-stok-' . now()->format('Ymd') . '.pdf');
+    }
+
     // ── Private helper ───────────────────────────────────────────────────
 
     private function terapkanFilterLaporan($query, Request $request): void
