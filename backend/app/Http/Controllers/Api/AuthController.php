@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bendahara;
 use App\Models\Marbot;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -13,7 +14,7 @@ class AuthController extends Controller
 {
     /**
      * POST /api/v1/auth/login
-     * Login marbot, mengembalikan Sanctum token.
+    * Login marbot atau bendahara, mengembalikan Sanctum token dan role.
      */
     public function login(Request $request): JsonResponse
     {
@@ -23,34 +24,44 @@ class AuthController extends Controller
         ]);
 
         $marbot = Marbot::where('email', $request->email)->first();
+        $bendahara = $marbot ? null : Bendahara::where('email', $request->email)->first();
+        $account = $marbot ?? $bendahara;
 
-        if (! $marbot || ! Hash::check($request->password, $marbot->password)) {
+        if (! $account || ! Hash::check($request->password, $account->password)) {
             throw ValidationException::withMessages([
                 'email' => ['Email atau password salah.'],
             ]);
         }
 
-        if (! $marbot->aktif) {
+        if (! $account->aktif) {
             return response()->json([
-                'message' => 'Akun Anda telah dinonaktifkan. Hubungi Marbot lain.',
+                'message' => 'Akun Anda telah dinonaktifkan. Hubungi administrator.',
             ], 403);
         }
 
-        // Hapus token lama (opsional — single session per device)
-        $marbot->tokens()->delete();
+        $role = $marbot ? 'marbot' : 'bendahara';
+        $account->tokens()->delete();
 
-        $token = $marbot->createToken('simba-marbot')->plainTextToken;
+        $token = $account->createToken('simba-' . $role)->plainTextToken;
+        $user = [
+            'id' => $account->id,
+            'role' => $role,
+            'nama' => $marbot ? $marbot->nama_marbot : $bendahara->nama_bendahara,
+            'email' => $account->email,
+            'aktif' => $account->aktif,
+        ];
+
+        if ($marbot) {
+            $user['nama_marbot'] = $marbot->nama_marbot;
+            $user['is_super_admin'] = $marbot->is_super_admin;
+        } else {
+            $user['nama_bendahara'] = $bendahara->nama_bendahara;
+        }
 
         return response()->json([
             'message' => 'Login berhasil.',
             'token'   => $token,
-            'user'    => [
-                'id'    => $marbot->id,
-                'nama_marbot'  => $marbot->nama_marbot,
-                'email' => $marbot->email,
-                'aktif' => $marbot->aktif,
-                'is_super_admin' => $marbot->is_super_admin,
-            ],
+            'user'    => $user,
         ]);
     }
 
@@ -69,15 +80,20 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        $marbot = $request->user();
+        $user = $request->user();
+        $isBendahara = $user instanceof Bendahara;
 
         return response()->json([
             'data' => [
-                'id'         => $marbot->id,
-                'nama_marbot'       => $marbot->nama_marbot,
-                'email'      => $marbot->email,
-                'aktif'      => $marbot->aktif,
-                'created_at' => $marbot->created_at,
+                'id' => $user->id,
+                'role' => $isBendahara ? 'bendahara' : 'marbot',
+                'nama' => $isBendahara ? $user->nama_bendahara : $user->nama_marbot,
+                'nama_marbot' => $isBendahara ? null : $user->nama_marbot,
+                'nama_bendahara' => $isBendahara ? $user->nama_bendahara : null,
+                'email' => $user->email,
+                'aktif' => $user->aktif,
+                'is_super_admin' => $isBendahara ? false : $user->is_super_admin,
+                'created_at' => $user->created_at,
             ],
         ]);
     }

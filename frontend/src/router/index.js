@@ -32,13 +32,15 @@ import GuideBook from '@/views/guideBook/GuideBook.vue'
 // --- Import Komponen (PENGEMBALIAN) ---
 const DaftarPengembalian = () => import('@/views/pengembalian/DaftarPengembalian.vue')
 const Login = () => import('@/views/auth/LoginPage.vue')
+const LandingPage = () => import('@/views/LandingPage.vue')
+const DashboardBendahara = () => import('@/views/dashboard/DashboardBendahara.vue')
 
 const routes = [
-  // --- ROOT REDIRECT ---
   {
     path: '/',
-    // Jika user ke "/", sistem akan lempar ke dashboard (yang nanti dicek loginnya)
-    redirect: '/dashboard' 
+    name: 'Landing',
+    component: LandingPage,
+    meta: { title: 'Abdimas Pengmas' },
   },
   // --- Group Route Login (GUEST ONLY) ---
   {
@@ -56,16 +58,22 @@ const routes = [
 
   // --- Group Route Utama (STRICT LOGIN) ---
   {
+    path: '/bendahara/dashboard',
+    name: 'DashboardBendahara',
+    component: DashboardBendahara,
+    meta: { requiresAuth: true, roles: ['bendahara'], title: 'Dashboard Bendahara' },
+  },
+  {
     path: '/',
     component: AppLayout,
-    meta: { requiresAuth: true }, // Semua anak (children) wajib login
+    meta: { requiresAuth: true, roles: ['marbot'] },
     children: [
       // Dashboard
       {
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('../views/dashboard/DashboardPage.vue'),
-        meta: { title: 'Dashboard' }
+        meta: { roles: ['marbot'], title: 'Dashboard' }
       },
 
       {
@@ -123,7 +131,7 @@ const router = createRouter({
 })
 
 // --- Middleware Penjaga Pintu (SECURITY GUARD) ---
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
   
   // Tunggu store inisialisasi token dari localStorage
@@ -131,17 +139,25 @@ router.beforeEach(async (to, from, next) => {
 
   // 1. Jika halaman butuh login tapi user BELUM login
   if (to.meta.requiresAuth && !auth.isLoggedIn) {
-    return next({ name: 'Login' })
+    return { name: 'Login', query: { redirect: to.fullPath } }
+  }
+
+  const roleHome = auth.user?.role === 'bendahara' ? '/bendahara/dashboard' : '/dashboard'
+
+  if (to.meta.roles && !to.meta.roles.includes(auth.user?.role)) {
+    return auth.isLoggedIn ? roleHome : { name: 'Login' }
   }
 
   // 2. Jika user SUDAH login tapi mau akses halaman login lagi
   if (to.meta.guest && auth.isLoggedIn) {
-    return next({ name: 'Dashboard' })
+    return roleHome
   }
 
   // Set judul tab browser secara dinamis
-  document.title = to.meta.title ? `${to.meta.title} SI MAS RAYYAN` : 'SI MAS RAYYAN'
-  next()
+  document.title = to.meta.title === 'Abdimas Pengmas'
+    ? 'Abdimas Pengmas'
+    : to.meta.title ? `${to.meta.title} | Abdimas Pengmas` : 'Abdimas Pengmas'
+  return true
 })
 
 export default router
