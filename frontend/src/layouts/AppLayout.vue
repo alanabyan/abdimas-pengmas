@@ -17,7 +17,8 @@ import {
     Bell,
     Menu,
     LogOutIcon,
-    BookUser
+    BookUser,
+    Wallet
 } from "lucide-vue-next"
 
 const authStore = useAuthStore()
@@ -43,6 +44,7 @@ const menus = [
     { label: "Warga", to: "/warga", icon: Users },
     { label: "Peminjaman", to: "/peminjaman", icon: ArrowRightLeft },
     { label: "Pengembalian", to: "/pengembalian", icon: RotateCcw },
+    { label: "Keuangan", to: "/keuangan", icon: Wallet },
     { label: "Laporan", to: "/laporan", icon: BarChart3 },
     { label: "Pengaturan", to: "/pengaturan", icon: Settings },
     { label: "Guide Book", to: "/guide-book", icon: BookUser },

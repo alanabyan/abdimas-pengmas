@@ -11,6 +11,28 @@
         <!-- Cards -->
         <div class="menu-grid">
 
+            <RouterLink to="/laporan/keuangan" class="menu-card menu-card--amber">
+                <div class="menu-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round" width="28" height="28">
+                        <path d="M4 19h16" />
+                        <path d="M7 16V8" />
+                        <path d="M12 16V5" />
+                        <path d="M17 16v-6" />
+                    </svg>
+                </div>
+                <div class="menu-card__body">
+                    <h3 class="menu-card__title">Laporan Keuangan</h3>
+                    <p class="menu-card__desc">Rekap infaq, qurban, dan transaksi terbaru untuk monitoring bendahara.</p>
+                </div>
+                <div class="menu-card__arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        width="18" height="18">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </div>
+            </RouterLink>
+
             <RouterLink to="/laporan/peminjaman" class="menu-card menu-card--green">
                 <div class="menu-card__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
@@ -170,6 +192,15 @@ import { RouterLink } from 'vue-router'
 
 .menu-card--blue:hover {
     border-color: #93c5fd;
+}
+
+.menu-card--amber .menu-card__icon {
+    background: #fff7ed;
+    color: #d97706;
+}
+
+.menu-card--amber:hover {
+    border-color: #fbbf24;
 }
 
 .menu-card__body {

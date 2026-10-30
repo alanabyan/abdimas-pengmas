@@ -19,6 +19,7 @@ import MenuLaporan from '@/views/laporan/MenuLaporan.vue'
 import LaporanPeminjaman from '@/views/laporan/LaporanPeminjaman.vue'
 import LaporanKerusakan from '@/views/laporan/LaporanKerusakan.vue'
 import LaporanStok from '@/views/laporan/LaporanStok.vue'
+import LaporanKeuangan from '@/views/laporan/LaporanKeuangan.vue'
 import DaftarBarang from '@/views/barang/DaftarBarang.vue'
 import TambahBarang from '@/views/barang/TambahBarang.vue'
 import EditBarang from '@/views/barang/EditBarang.vue'
@@ -34,6 +35,8 @@ const DaftarPengembalian = () => import('@/views/pengembalian/DaftarPengembalian
 const Login = () => import('@/views/auth/LoginPage.vue')
 const LandingPage = () => import('@/views/LandingPage.vue')
 const DashboardBendahara = () => import('@/views/dashboard/DashboardBendahara.vue')
+const Keuangan = () => import('@/views/dashboard/KeuanganPage.vue')
+const KasPage = () => import('@/views/dashboard/KasPage.vue')
 
 const routes = [
   {
@@ -62,6 +65,31 @@ const routes = [
     name: 'DashboardBendahara',
     component: DashboardBendahara,
     meta: { requiresAuth: true, roles: ['bendahara'], title: 'Dashboard Bendahara' },
+  },
+  {
+    path: '/bendahara/kas',
+    name: 'KasBendahara',
+    component: KasPage,
+    meta: { requiresAuth: true, roles: ['bendahara'], title: 'Kas Masuk & Keluar' },
+  },
+  {
+    path: '/keuangan',
+    name: 'Keuangan',
+    component: Keuangan,
+    redirect: { name: 'KeuanganInfaq' },
+    meta: { requiresAuth: true, roles: ['marbot', 'bendahara'], title: 'Keuangan' },
+  },
+  {
+    path: '/keuangan/infaq',
+    name: 'KeuanganInfaq',
+    component: Keuangan,
+    meta: { requiresAuth: true, roles: ['marbot', 'bendahara'], title: 'Keuangan Infaq' },
+  },
+  {
+    path: '/keuangan/qurban',
+    name: 'KeuanganQurban',
+    component: Keuangan,
+    meta: { requiresAuth: true, roles: ['marbot', 'bendahara'], title: 'Keuangan Qurban' },
   },
   {
     path: '/',
@@ -104,6 +132,7 @@ const routes = [
 
       // Laporan
       { path: 'laporan', name: 'Rekap Laporan', component: MenuLaporan, meta: { title: 'Rekap Laporan' } },
+      { path: 'laporan/keuangan', name: 'Laporan Keuangan', component: LaporanKeuangan, meta: { title: 'Laporan Keuangan' } },
       { path: 'laporan/peminjaman', name: 'Laporan Peminjaman', component: LaporanPeminjaman, meta: { title: 'Laporan Peminjaman' } },
       { path: 'laporan/kerusakan', name: 'Laporan Kerusakan', component: LaporanKerusakan, meta: { title: 'Laporan Kerusakan' } },
       { path: 'laporan/stok', name: 'Laporan Stok Barang', component: LaporanStok, meta: { title: 'Laporan Stok Barang' } },

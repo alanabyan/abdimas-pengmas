@@ -8,7 +8,7 @@
       <nav aria-label="Navigasi utama">
         <a href="#profil">Tentang</a>
         <a href="#program">Program</a>
-        <a href="#infaq">Infaq & sedekah</a>
+        <a href="#infaq">Infaq</a>
       </nav>
       <RouterLink class="login-link" to="/login"><LogIn :size="17" /> Login</RouterLink>
     </header>
@@ -58,16 +58,12 @@
       <div class="donation-intro">
         <div class="section-kicker">Titipkan kebaikan <span>03</span></div>
         <h2>Satu niat baik, banyak kemungkinan manfaat.</h2>
-        <p>Isi formulir infaq atau sedekah. Bendahara kami akan menghubungi Anda untuk konfirmasi penyaluran. Pengiriman formulir ini belum merupakan bukti pembayaran.</p>
+        <p>Isi formulir infaq. Bendahara kami akan menghubungi Anda untuk konfirmasi penyaluran. Pengiriman formulir ini belum merupakan bukti pembayaran.</p>
         <div class="donation-promise"><ShieldCheck :size="20" /><span>Data digunakan untuk menindaklanjuti pengajuan Anda.</span></div>
       </div>
 
       <form class="donation-form" @submit.prevent="submitInfaq">
-        <div class="form-heading"><div><span>FORMULIR DONASI</span><h3>Infaq & sedekah</h3></div><HandCoins :size="25" /></div>
-        <div class="kind-switch" role="group" aria-label="Jenis donasi">
-          <button type="button" :class="{ selected: form.jenis === 'infaq' }" @click="form.jenis = 'infaq'">Infaq</button>
-          <button type="button" :class="{ selected: form.jenis === 'sedekah' }" @click="form.jenis = 'sedekah'">Sedekah</button>
-        </div>
+        <div class="form-heading"><div><span>FORMULIR DONASI</span><h3>Infaq</h3></div><HandCoins :size="25" /></div>
         <label>Nama lengkap<input v-model.trim="form.nama" required maxlength="150" autocomplete="name" placeholder="Nama Anda" /></label>
         <div class="field-pair">
           <label>Nomor WhatsApp<input v-model.trim="form.telepon" required maxlength="30" autocomplete="tel" inputmode="tel" placeholder="08xx xxxx xxxx" /></label>
@@ -117,7 +113,8 @@ async function submitInfaq() {
   successMessage.value = ''
 
   try {
-    const response = await infaqService.submit({ ...form })
+    const payload = { ...form, jenis: 'infaq' }
+    const response = await infaqService.submit(payload)
     successMessage.value = response.message
     Object.assign(form, { nama: '', telepon: '', email: '', jumlah: 100000, jenis: 'infaq', catatan: '' })
   } catch (error) {

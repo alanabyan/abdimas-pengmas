@@ -23,8 +23,10 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $marbot = Marbot::where('email', $request->email)->first();
-        $bendahara = $marbot ? null : Bendahara::where('email', $request->email)->first();
+        $email = strtolower(trim($request->email));
+
+        $marbot = Marbot::whereRaw('LOWER(email) = ?', [$email])->first();
+        $bendahara = $marbot ? null : Bendahara::whereRaw('LOWER(email) = ?', [$email])->first();
         $account = $marbot ?? $bendahara;
 
         if (! $account || ! Hash::check($request->password, $account->password)) {

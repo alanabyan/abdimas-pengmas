@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\InfaqController;
+use App\Http\Controllers\Api\KasController;
+use App\Http\Controllers\Api\QurbanController;
 use App\Http\Controllers\Api\v1\KategoriController;
 use App\Http\Controllers\Api\v1\PeminjamanController;
 use App\Http\Controllers\Api\v1\WargaController;
@@ -38,6 +40,18 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('infaq', [InfaqController::class, 'index']);
+        Route::patch('infaq/{infaq}/status', [InfaqController::class, 'updateStatus']);
+        Route::get('qurban', [QurbanController::class, 'index']);
+        Route::post('qurban', [QurbanController::class, 'store']);
+        Route::patch('qurban/setting', [QurbanController::class, 'updateSetting']);
+        Route::patch('qurban/{qurban}/status', [QurbanController::class, 'updateStatus']);
+        Route::get('kas', [KasController::class, 'index']);
+        Route::get('kas/weekly', [KasController::class, 'weekly']);
+        Route::get('kas/weekly/pdf', [KasController::class, 'weeklyPdf']);
+        Route::get('kas/pdf', [KasController::class, 'pdf']);
+        Route::post('kas', [KasController::class, 'store']);
+        Route::get('laporan/keuangan', [InfaqController::class, 'laporanKeuangan']);
+        Route::get('laporan/keuangan/pdf', [InfaqController::class, 'keuanganPdf']);
     });
 
     // --- Fitur operasional khusus Marbot ---

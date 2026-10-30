@@ -93,5 +93,7 @@ class DatabaseSeeder extends Seeder
                 'catatan'              => 'Mohon dijaga kebersihannya',
             ]
         );
+
+        $this->call(DummyDataSeeder::class);
     }
 }

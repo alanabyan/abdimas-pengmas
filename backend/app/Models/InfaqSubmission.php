@@ -14,6 +14,8 @@ class InfaqSubmission extends Model
         'jenis',
         'catatan',
         'status',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [
