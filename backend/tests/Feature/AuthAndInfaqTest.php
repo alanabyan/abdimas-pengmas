@@ -62,6 +62,7 @@ class AuthAndInfaqTest extends TestCase
             $table->unsignedBigInteger('nominal_awal')->default(0);
             $table->unsignedBigInteger('nominal_terbaru')->default(0);
             $table->unsignedBigInteger('selisih_nominal')->default(0);
+            $table->string('sapi_id')->nullable();
             $table->string('bagian')->default('1/7');
             $table->unsignedTinyInteger('kuota_total')->default(7);
             $table->unsignedTinyInteger('kuota_tersedia')->default(6);
@@ -303,6 +304,59 @@ class AuthAndInfaqTest extends TestCase
             'id' => $submission->id,
             'status' => 'terkonfirmasi',
         ]);
+    }
+
+    public function test_qurban_registration_keeps_a_clear_sapi_group_identifier_for_each_share(): void
+    {
+        $bendahara = Bendahara::create([
+            'nama_bendahara' => 'Bendahara Sapi',
+            'email' => 'bendahara.sapi@example.test',
+            'password' => 'password123',
+            'aktif' => true,
+        ]);
+
+        $token = $bendahara->createToken('testing')->plainTextToken;
+
+        $this->withToken($token)
+            ->postJson('/api/v1/qurban', [
+                'nama' => ['Rizki', 'Ayu', 'Dani', 'Rina', 'Joko', 'Lina', 'Iwan'],
+                'telepon' => '081234567890',
+                'email' => 'sapi1@example.test',
+                'jumlah' => 2857143,
+                'sapi_id' => 'SAPI-01',
+                'catatan' => 'Kelompok sapi pertama',
+            ])->assertCreated();
+
+        $this->assertDatabaseHas('qurban_registrations', [
+            'sapi_id' => 'SAPI-01',
+            'nama' => 'Rizki',
+        ]);
+    }
+
+    public function test_qurban_returns_grouped_data_per_sapi_unit(): void
+    {
+        $bendahara = Bendahara::create([
+            'nama_bendahara' => 'Bendahara Group',
+            'email' => 'bendahara.group@example.test',
+            'password' => 'password123',
+            'aktif' => true,
+        ]);
+
+        $this->withToken($bendahara->createToken('testing')->plainTextToken)
+            ->postJson('/api/v1/qurban', [
+                'nama' => ['Rizki', 'Ayu', 'Dani', 'Rina', 'Joko', 'Lina', 'Iwan'],
+                'telepon' => '081234567890',
+                'email' => 'sapi.group@example.test',
+                'jumlah' => 2857143,
+                'sapi_id' => 'SAPI-02',
+                'catatan' => 'Kelompok sapi kedua',
+            ])->assertCreated();
+
+        $this->withToken($bendahara->createToken('testing')->plainTextToken)
+            ->getJson('/api/v1/qurban')
+            ->assertOk()
+            ->assertJsonPath('groups.0.sapi_id', 'SAPI-02')
+            ->assertJsonPath('groups.0.participants.0.nama', 'Rizki');
     }
 
     public function test_bendahara_can_update_qurban_registration_status(): void

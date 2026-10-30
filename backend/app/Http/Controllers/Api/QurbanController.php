@@ -34,9 +34,32 @@ class QurbanController extends Controller
         $filled = $registrations->count();
         $hargaSapi = (int) $setting->harga_sapi;
         $nominalPerOrang = (int) ceil($hargaSapi / self::KUOTA_TOTAL);
+        $groups = $registrations->groupBy(function ($registration) {
+            return $registration->sapi_id ?: 'SAPI-' . $registration->id;
+        })->map(function ($items, $sapiId) {
+            $status = 'terdaftar';
+
+            if ($items->every(fn ($item) => $item->status === 'lunas')) {
+                $status = 'lunas';
+            } elseif ($items->contains(fn ($item) => $item->status === 'terkonfirmasi')) {
+                $status = 'terkonfirmasi';
+            } elseif ($items->contains(fn ($item) => $item->status === 'ditolak')) {
+                $status = 'ditolak';
+            }
+
+            return [
+                'sapi_id' => $sapiId,
+                'participant_count' => $items->count(),
+                'total_nominal' => (int) $items->sum('jumlah'),
+                'total_tambahan' => (int) $items->sum('selisih_nominal'),
+                'status' => $status,
+                'participants' => $items->sortBy('id')->values()->all(),
+            ];
+        })->values()->all();
 
         return response()->json([
             'data' => $registrations,
+            'groups' => $groups,
             'summary' => [
                 'kuota_total' => (int) ($setting->kuota_total ?? self::KUOTA_TOTAL),
                 'kuota_tersedia' => max(0, (int) ($setting->kuota_total ?? self::KUOTA_TOTAL) - $filled),
@@ -79,6 +102,7 @@ class QurbanController extends Controller
             'telepon' => ['required', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
             'jumlah' => ['required', 'integer', 'min:1000', 'max:1000000000'],
+            'sapi_id' => ['nullable', 'string', 'max:50'],
             'catatan' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -128,6 +152,7 @@ class QurbanController extends Controller
             ], 422);
         }
 
+        $sapiId = trim((string) ($request->input('sapi_id') ?: 'SAPI-' . (QurbanRegistration::max('id') + 1)));
         $created = [];
         foreach ($names as $name) {
             $created[] = QurbanRegistration::create([
@@ -138,6 +163,7 @@ class QurbanController extends Controller
                 'nominal_awal' => $request->jumlah,
                 'nominal_terbaru' => $request->jumlah,
                 'selisih_nominal' => 0,
+                'sapi_id' => $sapiId,
                 'bagian' => '1/7',
                 'kuota_total' => self::KUOTA_TOTAL,
                 'kuota_tersedia' => max(0, self::KUOTA_TOTAL - (QurbanRegistration::count() + 1)),
@@ -150,6 +176,7 @@ class QurbanController extends Controller
             'message' => 'Pendaftaran qurban berhasil disimpan.',
             'data' => [
                 'created_count' => count($created),
+                'sapi_id' => $sapiId,
                 'names' => array_map(fn ($item) => $item->nama, $created),
                 'bagian' => '1/7',
                 'kuota_total' => self::KUOTA_TOTAL,

@@ -16,6 +16,7 @@ class QurbanRegistration extends Model
         'nominal_awal',
         'nominal_terbaru',
         'selisih_nominal',
+        'sapi_id',
         'bagian',
         'kuota_total',
         'kuota_tersedia',

@@ -8,10 +8,76 @@
             </div>
         </div>
 
-        <!-- Cards -->
-        <div class="menu-grid">
+        <div v-if="route.path.startsWith('/bendahara')" class="menu-grid">
+            <RouterLink :to="`${basePath}/keuangan`" class="menu-card menu-card--amber">
+                <div class="menu-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round" width="28" height="28">
+                        <path d="M4 19h16" />
+                        <path d="M7 16V8" />
+                        <path d="M12 16V5" />
+                        <path d="M17 16v-6" />
+                    </svg>
+                </div>
+                <div class="menu-card__body">
+                    <h3 class="menu-card__title">Laporan Keuangan</h3>
+                    <p class="menu-card__desc">Rekap infaq, qurban, dan transaksi bendahara per bulan.</p>
+                </div>
+                <div class="menu-card__arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        width="18" height="18">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </div>
+            </RouterLink>
 
-            <RouterLink to="/laporan/keuangan" class="menu-card menu-card--amber">
+            <RouterLink :to="`${basePath}/keuangan`" class="menu-card menu-card--green">
+                <div class="menu-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round" width="28" height="28">
+                        <path d="M19 11H5" />
+                        <path d="M19 7H5" />
+                        <path d="M19 15H5" />
+                        <path d="M19 19H5" />
+                    </svg>
+                </div>
+                <div class="menu-card__body">
+                    <h3 class="menu-card__title">Rekap Qurban</h3>
+                    <p class="menu-card__desc">Cek daftar pendaftaran qurban, status pembayaran, dan nominal per sapi.</p>
+                </div>
+                <div class="menu-card__arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        width="18" height="18">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </div>
+            </RouterLink>
+
+            <RouterLink to="/bendahara/kas" class="menu-card menu-card--blue">
+                <div class="menu-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round" width="28" height="28">
+                        <path d="M3 6h18v12H3z" />
+                        <path d="M16 12h3" />
+                        <path d="M8 12h3" />
+                        <path d="M12 8v8" />
+                    </svg>
+                </div>
+                <div class="menu-card__body">
+                    <h3 class="menu-card__title">Kas Masuk &amp; Keluar</h3>
+                    <p class="menu-card__desc">Pantau mutasi kas, pengeluaran, dan saldo kas bendahara harian.</p>
+                </div>
+                <div class="menu-card__arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        width="18" height="18">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </div>
+            </RouterLink>
+        </div>
+
+        <div v-else class="menu-grid">
+            <RouterLink :to="`${basePath}/keuangan`" class="menu-card menu-card--amber">
                 <div class="menu-card__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
                         stroke-linejoin="round" width="28" height="28">
@@ -33,7 +99,7 @@
                 </div>
             </RouterLink>
 
-            <RouterLink to="/laporan/peminjaman" class="menu-card menu-card--green">
+            <RouterLink :to="`${basePath}/peminjaman`" class="menu-card menu-card--green">
                 <div class="menu-card__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
                         stroke-linejoin="round" width="28" height="28">
@@ -57,7 +123,7 @@
                 </div>
             </RouterLink>
 
-            <RouterLink to="/laporan/kerusakan" class="menu-card menu-card--red">
+            <RouterLink :to="`${basePath}/kerusakan`" class="menu-card menu-card--red">
                 <div class="menu-card__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
                         stroke-linejoin="round" width="28" height="28">
@@ -68,7 +134,7 @@
                     </svg>
                 </div>
                 <div class="menu-card__body">
-                    <h3 class="menu-card__title">Laporan Kerusakan & Kehilangan</h3>
+                    <h3 class="menu-card__title">Laporan Kerusakan &amp; Kehilangan</h3>
                     <p class="menu-card__desc">Daftar barang yang dikembalikan dalam kondisi rusak atau dilaporkan
                         hilang.</p>
                 </div>
@@ -80,7 +146,7 @@
                 </div>
             </RouterLink>
 
-            <RouterLink to="/laporan/stok" class="menu-card menu-card--blue">
+            <RouterLink :to="`${basePath}/stok`" class="menu-card menu-card--blue">
                 <div class="menu-card__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
                         stroke-linejoin="round" width="28" height="28">
@@ -101,13 +167,16 @@
                     </svg>
                 </div>
             </RouterLink>
-
         </div>
     </div>
 </template>
 
 <script setup>
-import { RouterLink } from 'vue-router'
+import { computed } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
+
+const route = useRoute()
+const basePath = computed(() => route.path.startsWith('/bendahara') ? '/bendahara/laporan' : '/laporan')
 </script>
 
 <style scoped>

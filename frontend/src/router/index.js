@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
+import BendaharaLayout from '@/layouts/BendaharaLayout.vue'
 
 // --- Import Komponen (Peminjaman & Warga) ---
 import DaftarPinjaman from '../views/peminjaman/DaftarPinjaman.vue'
@@ -36,6 +37,7 @@ const Login = () => import('@/views/auth/LoginPage.vue')
 const LandingPage = () => import('@/views/LandingPage.vue')
 const DashboardBendahara = () => import('@/views/dashboard/DashboardBendahara.vue')
 const Keuangan = () => import('@/views/dashboard/KeuanganPage.vue')
+const QurbanPage = () => import('@/views/dashboard/QurbanPage.vue')
 const KasPage = () => import('@/views/dashboard/KasPage.vue')
 
 const routes = [
@@ -61,16 +63,51 @@ const routes = [
 
   // --- Group Route Utama (STRICT LOGIN) ---
   {
-    path: '/bendahara/dashboard',
-    name: 'DashboardBendahara',
-    component: DashboardBendahara,
-    meta: { requiresAuth: true, roles: ['bendahara'], title: 'Dashboard Bendahara' },
-  },
-  {
-    path: '/bendahara/kas',
-    name: 'KasBendahara',
-    component: KasPage,
-    meta: { requiresAuth: true, roles: ['bendahara'], title: 'Kas Masuk & Keluar' },
+    path: '/bendahara',
+    component: BendaharaLayout,
+    meta: { requiresAuth: true, roles: ['bendahara'], title: 'Bendahara' },
+    children: [
+      {
+        path: '',
+        redirect: { name: 'DashboardBendahara' },
+      },
+      {
+        path: 'dashboard',
+        name: 'DashboardBendahara',
+        component: DashboardBendahara,
+        meta: { title: 'Dashboard Bendahara' },
+      },
+      {
+        path: 'keuangan',
+        name: 'KeuanganBendahara',
+        component: Keuangan,
+        meta: { title: 'Keuangan Bendahara' },
+      },
+      {
+        path: 'laporan',
+        name: 'LaporanBendahara',
+        component: MenuLaporan,
+        meta: { title: 'Laporan Bendahara' },
+      },
+      {
+        path: 'laporan/keuangan',
+        name: 'LaporanKeuanganBendahara',
+        component: LaporanKeuangan,
+        meta: { title: 'Laporan Keuangan' },
+      },
+      {
+        path: 'qurban',
+        name: 'QurbanBendahara',
+        component: QurbanPage,
+        meta: { title: 'Qurban Bendahara' },
+      },
+      {
+        path: 'kas',
+        name: 'KasBendahara',
+        component: KasPage,
+        meta: { title: 'Kas Masuk & Keluar' },
+      },
+    ],
   },
   {
     path: '/keuangan',

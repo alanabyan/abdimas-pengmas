@@ -2,7 +2,7 @@
   <div class="laporan-page">
     <div class="page-top">
       <div class="breadcrumb">
-        <RouterLink to="/laporan" class="bc-link">Laporan</RouterLink>
+        <RouterLink :to="basePath" class="bc-link">Laporan</RouterLink>
         <span class="bc-sep">›</span>
         <span class="bc-current">Laporan Keuangan</span>
       </div>
@@ -100,12 +100,14 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import infaqService from '@/services/infaqService'
 
+const route = useRoute()
 const loading = ref(false)
 const report = ref({ summary: {}, monthly: [], transactions: [] })
 const selectedMonth = ref(new Date().toISOString().slice(0, 7))
+const basePath = computed(() => route.path.startsWith('/bendahara') ? '/bendahara/laporan' : '/laporan')
 
 const selectedMonthLabel = computed(() => {
   if (!selectedMonth.value) return 'semua periode'
@@ -243,11 +245,24 @@ onMounted(() => {
   border: 0;
   border-radius: 10px;
   padding: 9px 14px;
-  background: #176b4b;
+  background: linear-gradient(135deg, #176b4b 0%, #1d7a5b 100%);
   color: white;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  box-shadow: 0 6px 16px rgba(23, 107, 75, 0.18);
+}
+
+.export-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(23, 107, 75, 0.2);
+  filter: brightness(1.04);
+}
+
+.export-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(23, 107, 75, 0.14);
 }
 .summary-grid {
   display: grid;

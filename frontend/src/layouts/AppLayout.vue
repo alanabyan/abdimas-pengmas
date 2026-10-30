@@ -116,7 +116,7 @@ onMounted(() => {
                     <Menu class="w-5 h-5" />
                 </button>
 
-                <div class="flex-1" />
+                <div class="w-4" />
 
                 <div class="relative">
                     <button 
