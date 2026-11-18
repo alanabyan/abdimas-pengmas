@@ -8,9 +8,8 @@
                 </div>
             </div>
 
-            <h1 class="text-center text-[22px] font-extrabold text-masjid-900 tracking-tight mb-1">SI MAS RAYYAN</h1>
-            <p class="text-center text-[10px] font-semibold text-gray-500 tracking-[1.8px] uppercase mb-4">MARBOT ACCESS
-                PORTAL</p>
+            <h1 class="text-center text-[22px] font-extrabold text-masjid-900 tracking-tight mb-1">ABDIMAS PENGMAS</h1>
+            <p class="text-center text-[10px] font-semibold text-gray-500 tracking-[1.8px] uppercase mb-4">PORTAL PENGURUS</p>
 
             <div class="h-0.5 bg-gradient-to-r from-transparent via-masjid-500 to-transparent rounded mb-6 opacity-70">
             </div>
@@ -22,7 +21,7 @@
                         <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm-7 9a7 7 0 1114 0H3z" />
                         </svg>
-                        <input v-model="form.email" type="text" placeholder="marbot_id / email" autocomplete="username"
+                        <input v-model="form.email" type="email" placeholder="nama@email.com" autocomplete="username"
                             :disabled="loading" @input="errors.email = ''" />
                     </div>
                     <p v-if="errors.email" class="text-red-500 text-[11px] mt-1 font-medium">{{ errors.email }}</p>
@@ -119,7 +118,9 @@ async function handleLogin() {
     loading.value = true
     try {
         await authStore.login(form.email.trim(), form.password)
-        router.push(route.query.redirect || '/dashboard')
+        const home = authStore.user?.role === 'bendahara' ? '/bendahara/dashboard' : '/dashboard'
+        const requested = route.query.redirect
+        router.push(requested && (authStore.user?.role !== 'bendahara' || requested === home) ? requested : home)
     } catch (err) {
         const status = err?.response?.status
         if (status === 422 || status === 401) errors.server = 'Email atau password salah.'

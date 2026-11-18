@@ -16,6 +16,10 @@ export const useAuthStore = defineStore('auth', () => {
             try {
                 token.value = savedToken
                 user.value = JSON.parse(savedUser)
+                if (!user.value.role) {
+                    user.value.role = 'marbot'
+                    localStorage.setItem('simba_user', JSON.stringify(user.value))
+                }
             } catch (err) {
                 console.warn('[auth] Data localStorage korup, membersihkan...', err)
                 localStorage.removeItem('simba_token')

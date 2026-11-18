@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
+import BendaharaLayout from '@/layouts/BendaharaLayout.vue'
 
 // --- Import Komponen (Peminjaman & Warga) ---
 import DaftarPinjaman from '../views/peminjaman/DaftarPinjaman.vue'
@@ -19,6 +20,7 @@ import MenuLaporan from '@/views/laporan/MenuLaporan.vue'
 import LaporanPeminjaman from '@/views/laporan/LaporanPeminjaman.vue'
 import LaporanKerusakan from '@/views/laporan/LaporanKerusakan.vue'
 import LaporanStok from '@/views/laporan/LaporanStok.vue'
+import LaporanKeuangan from '@/views/laporan/LaporanKeuangan.vue'
 import DaftarBarang from '@/views/barang/DaftarBarang.vue'
 import TambahBarang from '@/views/barang/TambahBarang.vue'
 import EditBarang from '@/views/barang/EditBarang.vue'
@@ -32,13 +34,18 @@ import GuideBook from '@/views/guideBook/GuideBook.vue'
 // --- Import Komponen (PENGEMBALIAN) ---
 const DaftarPengembalian = () => import('@/views/pengembalian/DaftarPengembalian.vue')
 const Login = () => import('@/views/auth/LoginPage.vue')
+const LandingPage = () => import('@/views/LandingPage.vue')
+const DashboardBendahara = () => import('@/views/dashboard/DashboardBendahara.vue')
+const Keuangan = () => import('@/views/dashboard/KeuanganPage.vue')
+const QurbanPage = () => import('@/views/dashboard/QurbanPage.vue')
+const KasPage = () => import('@/views/dashboard/KasPage.vue')
 
 const routes = [
-  // --- ROOT REDIRECT ---
   {
     path: '/',
-    // Jika user ke "/", sistem akan lempar ke dashboard (yang nanti dicek loginnya)
-    redirect: '/dashboard' 
+    name: 'Landing',
+    component: LandingPage,
+    meta: { title: 'Abdimas Pengmas' },
   },
   // --- Group Route Login (GUEST ONLY) ---
   {
@@ -56,16 +63,82 @@ const routes = [
 
   // --- Group Route Utama (STRICT LOGIN) ---
   {
+    path: '/bendahara',
+    component: BendaharaLayout,
+    meta: { requiresAuth: true, roles: ['bendahara'], title: 'Bendahara' },
+    children: [
+      {
+        path: '',
+        redirect: { name: 'DashboardBendahara' },
+      },
+      {
+        path: 'dashboard',
+        name: 'DashboardBendahara',
+        component: DashboardBendahara,
+        meta: { title: 'Dashboard Bendahara' },
+      },
+      {
+        path: 'keuangan',
+        name: 'KeuanganBendahara',
+        component: Keuangan,
+        meta: { title: 'Keuangan Bendahara' },
+      },
+      {
+        path: 'laporan',
+        name: 'LaporanBendahara',
+        component: MenuLaporan,
+        meta: { title: 'Laporan Bendahara' },
+      },
+      {
+        path: 'laporan/keuangan',
+        name: 'LaporanKeuanganBendahara',
+        component: LaporanKeuangan,
+        meta: { title: 'Laporan Keuangan' },
+      },
+      {
+        path: 'qurban',
+        name: 'QurbanBendahara',
+        component: QurbanPage,
+        meta: { title: 'Qurban Bendahara' },
+      },
+      {
+        path: 'kas',
+        name: 'KasBendahara',
+        component: KasPage,
+        meta: { title: 'Kas Masuk & Keluar' },
+      },
+    ],
+  },
+  {
+    path: '/keuangan',
+    name: 'Keuangan',
+    component: Keuangan,
+    redirect: { name: 'KeuanganInfaq' },
+    meta: { requiresAuth: true, roles: ['marbot', 'bendahara'], title: 'Keuangan' },
+  },
+  {
+    path: '/keuangan/infaq',
+    name: 'KeuanganInfaq',
+    component: Keuangan,
+    meta: { requiresAuth: true, roles: ['marbot', 'bendahara'], title: 'Keuangan Infaq' },
+  },
+  {
+    path: '/keuangan/qurban',
+    name: 'KeuanganQurban',
+    component: Keuangan,
+    meta: { requiresAuth: true, roles: ['marbot', 'bendahara'], title: 'Keuangan Qurban' },
+  },
+  {
     path: '/',
     component: AppLayout,
-    meta: { requiresAuth: true }, // Semua anak (children) wajib login
+    meta: { requiresAuth: true, roles: ['marbot'] },
     children: [
       // Dashboard
       {
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('../views/dashboard/DashboardPage.vue'),
-        meta: { title: 'Dashboard' }
+        meta: { roles: ['marbot'], title: 'Dashboard' }
       },
 
       {
@@ -96,6 +169,7 @@ const routes = [
 
       // Laporan
       { path: 'laporan', name: 'Rekap Laporan', component: MenuLaporan, meta: { title: 'Rekap Laporan' } },
+      { path: 'laporan/keuangan', name: 'Laporan Keuangan', component: LaporanKeuangan, meta: { title: 'Laporan Keuangan' } },
       { path: 'laporan/peminjaman', name: 'Laporan Peminjaman', component: LaporanPeminjaman, meta: { title: 'Laporan Peminjaman' } },
       { path: 'laporan/kerusakan', name: 'Laporan Kerusakan', component: LaporanKerusakan, meta: { title: 'Laporan Kerusakan' } },
       { path: 'laporan/stok', name: 'Laporan Stok Barang', component: LaporanStok, meta: { title: 'Laporan Stok Barang' } },
@@ -123,7 +197,7 @@ const router = createRouter({
 })
 
 // --- Middleware Penjaga Pintu (SECURITY GUARD) ---
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
   
   // Tunggu store inisialisasi token dari localStorage
@@ -131,17 +205,25 @@ router.beforeEach(async (to, from, next) => {
 
   // 1. Jika halaman butuh login tapi user BELUM login
   if (to.meta.requiresAuth && !auth.isLoggedIn) {
-    return next({ name: 'Login' })
+    return { name: 'Login', query: { redirect: to.fullPath } }
+  }
+
+  const roleHome = auth.user?.role === 'bendahara' ? '/bendahara/dashboard' : '/dashboard'
+
+  if (to.meta.roles && !to.meta.roles.includes(auth.user?.role)) {
+    return auth.isLoggedIn ? roleHome : { name: 'Login' }
   }
 
   // 2. Jika user SUDAH login tapi mau akses halaman login lagi
   if (to.meta.guest && auth.isLoggedIn) {
-    return next({ name: 'Dashboard' })
+    return roleHome
   }
 
   // Set judul tab browser secara dinamis
-  document.title = to.meta.title ? `${to.meta.title} SI MAS RAYYAN` : 'SI MAS RAYYAN'
-  next()
+  document.title = to.meta.title === 'Abdimas Pengmas'
+    ? 'Abdimas Pengmas'
+    : to.meta.title ? `${to.meta.title} | Abdimas Pengmas` : 'Abdimas Pengmas'
+  return true
 })
 
 export default router

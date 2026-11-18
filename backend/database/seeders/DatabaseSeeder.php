@@ -15,6 +15,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(BendaharaSeeder::class);
+
         // 1. Akun Marbot
         $marbot = Marbot::firstOrCreate(
             ['email' => 'marbot@masjid.com'],
@@ -91,5 +93,7 @@ class DatabaseSeeder extends Seeder
                 'catatan'              => 'Mohon dijaga kebersihannya',
             ]
         );
+
+        $this->call(DummyDataSeeder::class);
     }
 }
