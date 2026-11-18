@@ -7,7 +7,9 @@ use App\Models\InfaqSubmission;
 use App\Models\Marbot;
 use App\Models\QurbanRegistration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AuthAndInfaqTest extends TestCase
@@ -16,7 +18,15 @@ class AuthAndInfaqTest extends TestCase
     {
         parent::setUp();
 
-        foreach (['personal_access_tokens', 'marbots', 'bendaharas', 'infaq_submissions', 'qurban_registrations', 'qurban_settings'] as $table) {
+        foreach ([
+            'personal_access_tokens',
+            'marbots',
+            'bendaharas',
+            'infaq_submissions',
+            'qurban_registrations',
+            'qurban_settings',
+            'qurban_payments',
+        ] as $table) {
             Schema::dropIfExists($table);
         }
 
@@ -45,11 +55,12 @@ class AuthAndInfaqTest extends TestCase
             $table->id();
             $table->string('nama');
             $table->string('telepon', 30);
-            $table->string('email')->nullable();
+            $table->string('blok_rumah');
+            $table->string('public_token', 36)->unique();
             $table->unsignedBigInteger('jumlah');
             $table->string('jenis');
-            $table->text('catatan')->nullable();
-            $table->string('status')->default('menunggu_konfirmasi');
+            $table->string('proof_path')->nullable();
+            $table->string('status')->default('menunggu_transfer');
             $table->timestamps();
         });
 
@@ -81,6 +92,17 @@ class AuthAndInfaqTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('qurban_payments', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('qurban_registration_id')->constrained('qurban_registrations')->cascadeOnDelete();
+            $table->unsignedSmallInteger('payment_number');
+            $table->unsignedBigInteger('amount');
+            $table->date('paid_at');
+            $table->string('note')->nullable();
+            $table->timestamps();
+            $table->unique(['qurban_registration_id', 'payment_number']);
+        });
+
         Schema::create('personal_access_tokens', function (Blueprint $table) {
             $table->id();
             $table->morphs('tokenable');
@@ -91,548 +113,231 @@ class AuthAndInfaqTest extends TestCase
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
         });
+
+        Storage::fake('local');
     }
 
-    public function test_marbot_login_includes_role(): void
-    {
-        Marbot::create([
-            'nama_marbot' => 'Marbot Utama',
-            'email' => 'marbot@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-            'is_super_admin' => false,
-        ]);
-
-        $login = $this->postJson('/api/v1/auth/login', [
-            'email' => 'marbot@example.test',
-            'password' => 'password123',
-        ])->assertOk()
-            ->assertJsonPath('user.role', 'marbot')
-            ->assertJsonPath('user.nama', 'Marbot Utama');
-
-        $this->withToken($login->json('token'))
-            ->getJson('/api/v1/infaq')
-            ->assertOk()
-            ->assertJsonPath('data', []);
-
-        $this->withToken($login->json('token'))
-            ->getJson('/api/v1/qurban')
-            ->assertOk();
-    }
-
-    public function test_bendahara_login_includes_role_and_can_view_infaq_submissions(): void
-    {
-        Bendahara::create([
-            'nama_bendahara' => 'Bendahara Utama',
-            'email' => 'bendahara@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $login = $this->postJson('/api/v1/auth/login', [
-            'email' => 'bendahara@example.test',
-            'password' => 'password123',
-        ])->assertOk()
-            ->assertJsonPath('user.role', 'bendahara')
-            ->assertJsonPath('user.nama', 'Bendahara Utama');
-
-        $this->withToken($login->json('token'))
-            ->getJson('/api/v1/infaq')
-            ->assertOk()
-            ->assertJsonPath('data', []);
-
-        $this->getJson('/api/v1/barang', [
-            'Authorization' => 'Bearer ' . $login->json('token'),
-        ])->assertForbidden();
-    }
-
-    public function test_finance_summary_includes_daily_and_monthly_recap(): void
-    {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Rekap',
-            'email' => 'bendahara.rekap@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
-
-        InfaqSubmission::create([
-            'nama' => 'Rekap Infaq',
-            'telepon' => '081234567892',
-            'email' => 'rekap@example.test',
-            'jumlah' => 150000,
-            'jenis' => 'infaq',
-            'catatan' => 'Rekap harian',
-            'status' => 'menunggu_konfirmasi',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        QurbanRegistration::create([
-            'nama' => 'Rekap Qurban',
-            'telepon' => '081234567893',
-            'email' => 'rekapqurban@example.test',
-            'jumlah' => 2857143,
-            'bagian' => '1/7',
-            'kuota_total' => 7,
-            'kuota_tersedia' => 6,
-            'catatan' => 'Rekap bulanan',
-            'status' => 'terdaftar',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $this->withToken($token)
-            ->getJson('/api/v1/infaq')
-            ->assertOk()
-            ->assertJsonPath('summary.rekap_harian.0.label', now()->subDays(6)->translatedFormat('D'))
-            ->assertJsonPath('summary.rekap_bulanan.0.label', now()->subMonths(5)->translatedFormat('M'));
-
-        $this->withToken($token)
-            ->getJson('/api/v1/qurban')
-            ->assertOk()
-            ->assertJsonPath('summary.rekap_harian.0.label', now()->subDays(6)->translatedFormat('D'))
-            ->assertJsonPath('summary.rekap_bulanan.0.label', now()->subMonths(5)->translatedFormat('M'));
-    }
-
-    public function test_bendahara_login_accepts_the_project_email_alias_case_insensitively(): void
-    {
-        Bendahara::create([
-            'nama_bendahara' => 'Bendahara Abdimas',
-            'email' => 'bendahara@abdimas-pengmas.org',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $this->postJson('/api/v1/auth/login', [
-            'email' => 'Bendahara@Abdimas-Pengmas.org',
-            'password' => 'password123',
-        ])->assertOk()
-            ->assertJsonPath('user.role', 'bendahara')
-            ->assertJsonPath('user.nama', 'Bendahara Abdimas');
-    }
-
-    public function test_qurban_registration_uses_the_seven_person_share_rule_and_keeps_kuota(): void
-    {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Qurban',
-            'email' => 'bendahara.qurban@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
-
-        $this->withToken($token)
-            ->postJson('/api/v1/qurban', [
-                'nama' => 'Andi Wijaya',
-                'telepon' => '081234567891',
-                'email' => 'andi@example.test',
-                'jumlah' => 2857143,
-                'catatan' => 'Ikut 1/7 bagian sapi',
-            ])->assertCreated()
-            ->assertJsonPath('data.bagian', '1/7')
-            ->assertJsonPath('data.kuota_tersedia', 6)
-            ->assertJsonPath('data.kuota_total', 7);
-
-        $this->assertDatabaseHas('qurban_registrations', [
-            'nama' => 'Andi Wijaya',
-            'bagian' => '1/7',
-        ]);
-    }
-
-    public function test_qurban_registration_accepts_multiple_names_for_a_single_sapi(): void
-    {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Nama 7 Orang',
-            'email' => 'bendahara.7orang@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
-
-        $this->withToken($token)
-            ->postJson('/api/v1/qurban', [
-                'nama' => ['Andi Wijaya', 'Budi Santoso', 'Citra Lestari', 'Dewi Rahma', 'Eko Prasetyo', 'Fani Nuraeni', 'Gilang Permana'],
-                'telepon' => '081234567890',
-                'email' => 'sapi7@example.test',
-                'jumlah' => 2857143,
-                'catatan' => 'Satu sapi dibagi 7 peserta',
-            ])->assertCreated()
-            ->assertJsonPath('data.created_count', 7)
-            ->assertJsonPath('data.names.0', 'Andi Wijaya');
-
-        foreach (['Andi Wijaya', 'Budi Santoso', 'Citra Lestari', 'Dewi Rahma', 'Eko Prasetyo', 'Fani Nuraeni', 'Gilang Permana'] as $nama) {
-            $this->assertDatabaseHas('qurban_registrations', [
-                'nama' => $nama,
-                'telepon' => '081234567890',
-                'bagian' => '1/7',
-            ]);
-        }
-    }
-
-    public function test_bendahara_can_update_infaq_submission_status(): void
-    {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Infaq',
-            'email' => 'bendahara.infaq@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $submission = InfaqSubmission::create([
-            'nama' => 'Ahmad Ridwan',
-            'telepon' => '081234567899',
-            'email' => 'ahmad@example.test',
-            'jumlah' => 250000,
-            'jenis' => 'infaq',
-            'catatan' => 'Donasi kegiatan',
-            'status' => 'menunggu_konfirmasi',
-        ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
-
-        $this->withToken($token)
-            ->patchJson('/api/v1/infaq/' . $submission->id . '/status', [
-                'status' => 'terkonfirmasi',
-            ])->assertOk()
-            ->assertJsonPath('data.status', 'terkonfirmasi');
-
-        $this->assertDatabaseHas('infaq_submissions', [
-            'id' => $submission->id,
-            'status' => 'terkonfirmasi',
-        ]);
-    }
-
-    public function test_qurban_registration_keeps_a_clear_sapi_group_identifier_for_each_share(): void
-    {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Sapi',
-            'email' => 'bendahara.sapi@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
-
-        $this->withToken($token)
-            ->postJson('/api/v1/qurban', [
-                'nama' => ['Rizki', 'Ayu', 'Dani', 'Rina', 'Joko', 'Lina', 'Iwan'],
-                'telepon' => '081234567890',
-                'email' => 'sapi1@example.test',
-                'jumlah' => 2857143,
-                'sapi_id' => 'SAPI-01',
-                'catatan' => 'Kelompok sapi pertama',
-            ])->assertCreated();
-
-        $this->assertDatabaseHas('qurban_registrations', [
-            'sapi_id' => 'SAPI-01',
-            'nama' => 'Rizki',
-        ]);
-    }
-
-    public function test_qurban_returns_grouped_data_per_sapi_unit(): void
-    {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Group',
-            'email' => 'bendahara.group@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $this->withToken($bendahara->createToken('testing')->plainTextToken)
-            ->postJson('/api/v1/qurban', [
-                'nama' => ['Rizki', 'Ayu', 'Dani', 'Rina', 'Joko', 'Lina', 'Iwan'],
-                'telepon' => '081234567890',
-                'email' => 'sapi.group@example.test',
-                'jumlah' => 2857143,
-                'sapi_id' => 'SAPI-02',
-                'catatan' => 'Kelompok sapi kedua',
-            ])->assertCreated();
-
-        $this->withToken($bendahara->createToken('testing')->plainTextToken)
-            ->getJson('/api/v1/qurban')
-            ->assertOk()
-            ->assertJsonPath('groups.0.sapi_id', 'SAPI-02')
-            ->assertJsonPath('groups.0.participants.0.nama', 'Rizki');
-    }
-
-    public function test_bendahara_can_update_qurban_registration_status(): void
-    {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Status',
-            'email' => 'bendahara.status@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $registration = \App\Models\QurbanRegistration::create([
-            'nama' => 'Rina Utami',
-            'telepon' => '081234567892',
-            'email' => 'rina@example.test',
-            'jumlah' => 2857143,
-            'bagian' => '1/7',
-            'kuota_total' => 7,
-            'kuota_tersedia' => 6,
-            'status' => 'terdaftar',
-        ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
-
-        $this->withToken($token)
-            ->patchJson('/api/v1/qurban/' . $registration->id . '/status', [
-                'status' => 'lunas',
-            ])->assertOk()
-            ->assertJsonPath('data.status', 'lunas');
-
-        $this->assertDatabaseHas('qurban_registrations', [
-            'id' => $registration->id,
-            'status' => 'lunas',
-        ]);
-    }
-
-    public function test_bendahara_can_update_qurban_price_for_the_current_period(): void
-    {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Harga',
-            'email' => 'bendahara.harga@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
-
-        $this->withToken($token)
-            ->patchJson('/api/v1/qurban/setting', [
-                'harga_sapi' => 24000000,
-            ])->assertOk()
-            ->assertJsonPath('data.harga_sapi', 24000000)
-            ->assertJsonPath('data.nominal_per_orang', 3428572);
-
-        $this->withToken($token)
-            ->getJson('/api/v1/qurban')
-            ->assertOk()
-            ->assertJsonPath('summary.harga_sapi', 24000000)
-            ->assertJsonPath('summary.nominal_per_orang', 3428572);
-    }
-
-    public function test_qurban_price_increase_marks_the_difference_for_unpaid_participants_only(): void
-    {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Kenaikan Harga',
-            'email' => 'bendahara.kenaikan@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
-
-        $paid = \App\Models\QurbanRegistration::create([
-            'nama' => 'Sudah Lunas',
-            'telepon' => '081234567894',
-            'email' => 'lunas@example.test',
-            'jumlah' => 2571429,
-            'bagian' => '1/7',
-            'kuota_total' => 7,
-            'kuota_tersedia' => 6,
-            'status' => 'lunas',
-        ]);
-
-        $pending = \App\Models\QurbanRegistration::create([
-            'nama' => 'Belum Lunas',
-            'telepon' => '081234567895',
-            'email' => 'pending@example.test',
-            'jumlah' => 2571429,
-            'bagian' => '1/7',
-            'kuota_total' => 7,
-            'kuota_tersedia' => 6,
-            'status' => 'terdaftar',
-        ]);
-
-        $this->withToken($token)
-            ->patchJson('/api/v1/qurban/setting', [
-                'harga_sapi' => 24000000,
-            ])->assertOk();
-
-        $pending->refresh();
-        $paid->refresh();
-
-        $this->assertSame(3428572, (int) $pending->jumlah);
-        $this->assertSame(857143, (int) $pending->selisih_nominal);
-        $this->assertSame(2571429, (int) $paid->jumlah);
-        $this->assertSame(0, (int) $paid->selisih_nominal);
-    }
-
-    public function test_public_sadaqah_submission_is_accepted_and_stored_under_the_standard_type(): void
-    {
-        $this->postJson('/api/v1/infaq', [
-            'nama' => 'Warga Sadaqah',
-            'telepon' => '081234567891',
-            'email' => 'sadaqah@example.test',
-            'jumlah' => 75000,
-            'jenis' => 'sadaqah',
-            'catatan' => 'Untuk kebutuhan santunan',
-        ])->assertCreated()
-            ->assertJsonPath('data.status', 'menunggu_konfirmasi');
-
-        $this->assertDatabaseHas('infaq_submissions', [
-            'nama' => 'Warga Sadaqah',
-            'jumlah' => 75000,
-            'jenis' => 'sedekah',
-        ]);
-    }
-
-    public function test_keuangan_report_returns_monthly_totals_and_recent_transactions(): void
-    {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Laporan',
-            'email' => 'bendahara.laporan@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
-
-        InfaqSubmission::create([
-            'nama' => 'Laporan Infaq',
-            'telepon' => '081234567899',
-            'email' => 'laporan.infaq@example.test',
-            'jumlah' => 200000,
-            'jenis' => 'infaq',
-            'catatan' => 'Laporan rutin',
-            'status' => 'terkonfirmasi',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        QurbanRegistration::create([
-            'nama' => 'Laporan Qurban',
-            'telepon' => '081234567897',
-            'email' => 'laporan.qurban@example.test',
-            'jumlah' => 2857143,
-            'bagian' => '1/7',
-            'kuota_total' => 7,
-            'kuota_tersedia' => 6,
-            'catatan' => 'Laporan qurban',
-            'status' => 'lunas',
-            'created_at' => now()->subDay(),
-            'updated_at' => now()->subDay(),
-        ]);
-
-        $this->withToken($token)
-            ->getJson('/api/v1/laporan/keuangan')
-            ->assertOk()
-            ->assertJsonPath('summary.total_infaq', 200000)
-            ->assertJsonPath('summary.total_qurban', 2857143)
-            ->assertJsonPath('monthly.0.infaq', 200000)
-            ->assertJsonPath('transactions.0.type', 'qurban');
-    }
-
-    public function test_keuangan_report_can_be_filtered_by_specific_month(): void
-    {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Filter',
-            'email' => 'bendahara.filter@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
-
-        InfaqSubmission::create([
-            'nama' => 'Infaq Bulan Ini',
-            'telepon' => '081234567810',
-            'email' => 'bulan.ini@example.test',
-            'jumlah' => 150000,
-            'jenis' => 'infaq',
-            'catatan' => 'Untuk bulan ini',
-            'status' => 'terkonfirmasi',
-            'created_at' => now()->startOfMonth(),
-            'updated_at' => now()->startOfMonth(),
-        ]);
-
-        InfaqSubmission::create([
-            'nama' => 'Infaq Bulan Lalu',
-            'telepon' => '081234567811',
-            'email' => 'bulan.lalu@example.test',
-            'jumlah' => 300000,
-            'jenis' => 'infaq',
-            'catatan' => 'Untuk bulan lalu',
-            'status' => 'terkonfirmasi',
-            'created_at' => now()->subMonth()->startOfMonth(),
-            'updated_at' => now()->subMonth()->startOfMonth(),
-        ]);
-
-        QurbanRegistration::create([
-            'nama' => 'Qurban Bulan Ini',
-            'telepon' => '081234567812',
-            'email' => 'qurban.ini@example.test',
-            'jumlah' => 2857143,
-            'bagian' => '1/7',
-            'kuota_total' => 7,
-            'kuota_tersedia' => 6,
-            'status' => 'lunas',
-            'created_at' => now()->startOfMonth(),
-            'updated_at' => now()->startOfMonth(),
-        ]);
-
-        $this->withToken($token)
-            ->getJson('/api/v1/laporan/keuangan?month=' . now()->format('Y-m'))
-            ->assertOk()
-            ->assertJsonPath('summary.total_infaq', 150000)
-            ->assertJsonPath('summary.total_qurban', 2857143)
-            ->assertJsonPath('summary.month', now()->format('Y-m'));
-    }
-
-    public function test_keuangan_report_can_be_exported_as_pdf(): void
-    {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara PDF',
-            'email' => 'bendahara.pdf@example.test',
-            'password' => 'password123',
-            'aktif' => true,
-        ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
-
-        InfaqSubmission::create([
-            'nama' => 'Infaq PDF',
-            'telepon' => '081234567813',
-            'email' => 'pdf.infaq@example.test',
-            'jumlah' => 220000,
-            'jenis' => 'infaq',
-            'catatan' => 'Untuk laporan PDF',
-            'status' => 'terkonfirmasi',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $this->withToken($token)
-            ->get('/api/v1/laporan/keuangan/pdf')
-            ->assertOk()
-            ->assertHeader('Content-Type', 'application/pdf');
-    }
-
-    public function test_public_infaq_submission_is_stored_and_not_publicly_listed(): void
+    public function test_public_donation_requires_house_block_and_starts_waiting_for_transfer(): void
     {
         $this->postJson('/api/v1/infaq', [
             'nama' => 'Warga Cikarang',
             'telepon' => '081234567890',
-            'email' => 'warga@example.test',
             'jumlah' => 50000,
-            'jenis' => 'sedekah',
-            'catatan' => 'Untuk kegiatan pendidikan',
+            'jenis' => 'zakat',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('blok_rumah');
+
+        $this->postJson('/api/v1/infaq', [
+            'nama' => 'Warga Cikarang',
+            'telepon' => '081234567890',
+            'blok_rumah' => 'A1 No. 12',
+            'jumlah' => 50000,
+            'jenis' => 'zakat',
+            'email' => 'ignored@example.test',
+            'pesan' => 'Tidak disimpan',
         ])->assertCreated()
-            ->assertJsonPath('data.status', 'menunggu_konfirmasi');
+            ->assertJsonPath('data.status', 'menunggu_transfer')
+            ->assertJsonStructure(['data' => ['public_token']]);
 
         $this->assertDatabaseHas('infaq_submissions', [
             'nama' => 'Warga Cikarang',
-            'jumlah' => 50000,
-            'jenis' => 'sedekah',
+            'blok_rumah' => 'A1 No. 12',
+            'jenis' => 'zakat',
+            'status' => 'menunggu_transfer',
+        ]);
+    }
+
+    public function test_receipt_upload_moves_donation_to_verification_and_marbot_can_confirm(): void
+    {
+        $submission = InfaqSubmission::create([
+            'nama' => 'Warga Donasi',
+            'telepon' => '081234567890',
+            'blok_rumah' => 'B2 No. 3',
+            'jumlah' => 100000,
+            'jenis' => 'infaq',
+            'status' => 'menunggu_transfer',
         ]);
 
-        $this->getJson('/api/v1/infaq')->assertUnauthorized();
+        $this->post('/api/v1/infaq/' . $submission->public_token . '/receipt', [
+            'bukti' => UploadedFile::fake()->image('bukti.jpg'),
+        ])->assertOk()
+            ->assertJsonPath('data.status', 'menunggu_konfirmasi');
+
+        $submission->refresh();
+        $this->assertSame('menunggu_konfirmasi', $submission->status);
+        Storage::disk('local')->assertExists($submission->proof_path);
+
+        $marbot = Marbot::create([
+            'nama_marbot' => 'Marbot',
+            'email' => 'marbot@example.test',
+            'password' => 'password123',
+            'aktif' => true,
+        ]);
+
+        $this->withToken($marbot->createToken('testing')->plainTextToken)
+            ->patchJson('/api/v1/infaq/' . $submission->id . '/status', [
+                'status' => 'terkonfirmasi',
+            ])->assertOk()
+            ->assertJsonPath('data.status', 'terkonfirmasi');
+    }
+
+    public function test_bendahara_can_read_but_cannot_change_donation_status(): void
+    {
+        $bendahara = Bendahara::create([
+            'nama_bendahara' => 'Bendahara',
+            'email' => 'bendahara@example.test',
+            'password' => 'password123',
+            'aktif' => true,
+        ]);
+        $submission = InfaqSubmission::create([
+            'nama' => 'Warga Donasi',
+            'telepon' => '081234567890',
+            'blok_rumah' => 'B2 No. 3',
+            'jumlah' => 100000,
+            'jenis' => 'infaq',
+            'proof_path' => 'ziswaf/proofs/bukti.jpg',
+            'status' => 'menunggu_konfirmasi',
+        ]);
+        $token = $bendahara->createToken('testing')->plainTextToken;
+
+        $this->withToken($token)
+            ->getJson('/api/v1/infaq')
+            ->assertOk()
+            ->assertJsonPath('data.0.has_receipt', true);
+
+        $this->withToken($token)
+            ->patchJson('/api/v1/infaq/' . $submission->id . '/status', [
+                'status' => 'terkonfirmasi',
+            ])->assertForbidden();
+    }
+
+    public function test_login_keeps_role_identity_for_both_account_types(): void
+    {
+        Marbot::create([
+            'nama_marbot' => 'Marbot',
+            'email' => 'login.marbot@example.test',
+            'password' => 'password123',
+            'aktif' => true,
+        ]);
+        Bendahara::create([
+            'nama_bendahara' => 'Bendahara',
+            'email' => 'login.bendahara@example.test',
+            'password' => 'password123',
+            'aktif' => true,
+        ]);
+
+        $marbotLogin = $this->postJson('/api/v1/auth/login', [
+            'email' => 'login.marbot@example.test',
+            'password' => 'password123',
+        ])->assertOk()->assertJsonPath('user.role', 'marbot');
+
+        $bendaharaLogin = $this->postJson('/api/v1/auth/login', [
+            'email' => 'login.bendahara@example.test',
+            'password' => 'password123',
+        ])->assertOk()->assertJsonPath('user.role', 'bendahara');
+
+        $this->withToken($marbotLogin->json('token'))->getJson('/api/v1/qurban')->assertOk();
+        $this->withToken($bendaharaLogin->json('token'))->getJson('/api/v1/qurban')->assertOk();
+    }
+
+    public function test_bendahara_cannot_create_qurban_participants_or_record_payments(): void
+    {
+        $bendahara = Bendahara::create([
+            'nama_bendahara' => 'Bendahara',
+            'email' => 'bendahara.qurban@example.test',
+            'password' => 'password123',
+            'aktif' => true,
+        ]);
+        $registration = QurbanRegistration::create([
+            'nama' => 'Peserta Qurban',
+            'telepon' => '081234567890',
+            'jumlah' => 3000000,
+            'status' => 'terdaftar',
+        ]);
+        $token = $bendahara->createToken('testing')->plainTextToken;
+
+        $this->withToken($token)
+            ->postJson('/api/v1/qurban', [
+                'nama' => 'Peserta Baru',
+                'telepon' => '081234567891',
+                'jumlah' => 3000000,
+            ])->assertForbidden();
+
+        $this->withToken($token)
+            ->patchJson('/api/v1/qurban/setting', ['harga_sapi' => 24000000])
+            ->assertForbidden();
+
+        $this->withToken($token)
+            ->postJson('/api/v1/qurban/' . $registration->id . '/payments', [
+                'amount' => 1000000,
+                'paid_at' => now()->toDateString(),
+            ])->assertForbidden();
+
+        $this->withToken($token)->getJson('/api/v1/qurban')->assertOk();
+    }
+
+    public function test_marbot_can_register_multiple_participants_in_one_sapi_group(): void
+    {
+        $marbot = Marbot::create([
+            'nama_marbot' => 'Marbot Qurban',
+            'email' => 'marbot.group@example.test',
+            'password' => 'password123',
+            'aktif' => true,
+        ]);
+        $token = $marbot->createToken('testing')->plainTextToken;
+
+        $this->withToken($token)
+            ->postJson('/api/v1/qurban', [
+                'nama' => ['Andi', 'Budi', 'Citra', 'Dewi', 'Eko', 'Fani', 'Gilang'],
+                'telepon' => '081234567890',
+                'jumlah' => 2857143,
+                'sapi_id' => 'SAPI-01',
+            ])->assertCreated()
+            ->assertJsonPath('data.created_count', 7);
+
+        $this->withToken($token)
+            ->getJson('/api/v1/qurban')
+            ->assertOk()
+            ->assertJsonPath('groups.0.sapi_id', 'SAPI-01')
+            ->assertJsonPath('groups.0.participant_count', 7);
+    }
+
+    public function test_marbot_can_record_installments_and_progress_updates_until_paid(): void
+    {
+        $marbot = Marbot::create([
+            'nama_marbot' => 'Marbot',
+            'email' => 'marbot.qurban@example.test',
+            'password' => 'password123',
+            'aktif' => true,
+        ]);
+        $registration = QurbanRegistration::create([
+            'nama' => 'Peserta Qurban',
+            'telepon' => '081234567890',
+            'jumlah' => 3000000,
+            'status' => 'terdaftar',
+        ]);
+        $token = $marbot->createToken('testing')->plainTextToken;
+
+        $this->withToken($token)
+            ->postJson('/api/v1/qurban/' . $registration->id . '/payments', [
+                'amount' => 1000000,
+                'paid_at' => now()->toDateString(),
+            ])->assertCreated()
+            ->assertJsonPath('data.payment_number', 1);
+
+        $this->withToken($token)
+            ->postJson('/api/v1/qurban/' . $registration->id . '/payments', [
+                'amount' => 2000000,
+                'paid_at' => now()->toDateString(),
+            ])->assertCreated()
+            ->assertJsonPath('data.payment_number', 2);
+
+        $this->withToken($token)
+            ->getJson('/api/v1/qurban')
+            ->assertOk()
+            ->assertJsonPath('data.0.status', 'lunas')
+            ->assertJsonPath('data.0.total_dibayar', 3000000)
+            ->assertJsonPath('data.0.progres_pembayaran', 100)
+            ->assertJsonPath('data.0.jumlah_pembayaran', 2);
     }
 }

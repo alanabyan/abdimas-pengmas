@@ -6,7 +6,7 @@
 return [
 
     'defaults' => [
-        'guard'     => 'marbot',
+        'guard'     => 'web',
         'passwords' => 'marbots',
     ],
 
@@ -16,9 +16,12 @@ return [
             'provider' => 'marbots',
         ],
 
-        // Guard untuk API — dipakai oleh auth:sanctum
+        'bendahara' => [
+            'driver'   => 'session',
+            'provider' => 'bendaharas',
+        ],
         'marbot' => [
-            'driver'   => 'sanctum',
+            'driver'   => 'session',
             'provider' => 'marbots',
         ],
     ],
@@ -29,11 +32,21 @@ return [
             'driver' => 'eloquent',
             'model'  => App\Models\Marbot::class,
         ],
+        'bendaharas' => [
+            'driver' => 'eloquent',
+            'model'  => App\Models\Bendahara::class,
+        ],
     ],
 
     'passwords' => [
         'marbots' => [
             'provider' => 'marbots',
+            'table'    => 'password_reset_tokens',
+            'expire'   => 60,
+            'throttle' => 60,
+        ],
+        'bendaharas' => [
+            'provider' => 'bendaharas',
             'table'    => 'password_reset_tokens',
             'expire'   => 60,
             'throttle' => 60,

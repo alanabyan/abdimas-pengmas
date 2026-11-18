@@ -5,4 +5,5 @@ export default {
   createRegistration: (payload) => api.post('/qurban', payload).then((response) => response.data),
   updateSetting: (payload) => api.patch('/qurban/setting', payload).then((response) => response.data),
   updateStatus: (id, payload) => api.patch(`/qurban/${id}/status`, payload).then((response) => response.data),
+  addPayment: (id, payload) => api.post(`/qurban/${id}/payments`, payload).then((response) => response.data),
 }

@@ -28,6 +28,8 @@ Route::get('/user', function (Request $request) {
 Route::prefix('v1')->group(function () {
 
     Route::post('infaq', [InfaqController::class, 'store'])->middleware('throttle:10,1');
+    Route::post('infaq/{token}/receipt', [InfaqController::class, 'uploadReceipt'])->middleware('throttle:10,1');
+    Route::get('kas/summary', [KasController::class, 'publicSummary']);
 
     // --- Fitur Auth ---
     Route::prefix('auth')->group(function () {
@@ -40,22 +42,22 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('infaq', [InfaqController::class, 'index']);
-        Route::patch('infaq/{infaq}/status', [InfaqController::class, 'updateStatus']);
+        Route::get('infaq/{infaq}/receipt', [InfaqController::class, 'downloadReceipt']);
         Route::get('qurban', [QurbanController::class, 'index']);
-        Route::post('qurban', [QurbanController::class, 'store']);
-        Route::patch('qurban/setting', [QurbanController::class, 'updateSetting']);
-        Route::patch('qurban/{qurban}/status', [QurbanController::class, 'updateStatus']);
         Route::get('kas', [KasController::class, 'index']);
         Route::get('kas/weekly', [KasController::class, 'weekly']);
         Route::get('kas/weekly/pdf', [KasController::class, 'weeklyPdf']);
         Route::get('kas/pdf', [KasController::class, 'pdf']);
-        Route::post('kas', [KasController::class, 'store']);
-        Route::get('laporan/keuangan', [InfaqController::class, 'laporanKeuangan']);
-        Route::get('laporan/keuangan/pdf', [InfaqController::class, 'keuanganPdf']);
     });
 
     // --- Fitur operasional khusus Marbot ---
     Route::middleware(['auth:sanctum', 'marbot'])->group(function () {
+        Route::patch('infaq/{infaq}/status', [InfaqController::class, 'updateStatus']);
+        Route::post('qurban', [QurbanController::class, 'store']);
+        Route::patch('qurban/setting', [QurbanController::class, 'updateSetting']);
+        Route::patch('qurban/{qurban}/status', [QurbanController::class, 'updateStatus']);
+        Route::post('qurban/{qurban}/payments', [QurbanController::class, 'storePayment']);
+        Route::post('kas', [KasController::class, 'store']);
 
         // --- Fitur Warga & Notifikasi ---
         Route::get('warga/search', [WargaController::class, 'search']);

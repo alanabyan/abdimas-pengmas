@@ -21,13 +21,12 @@
     <section class="panel-grid">
       <div class="panel">
         <div class="panel-header">
-          <h2>Ringkasan keuangan</h2>
+          <h2>Ringkasan kas</h2>
         </div>
-        <ul v-if="financeReport.monthly?.length" class="rows-list">
-          <li v-for="item in financeReport.monthly" :key="item.month || item.label">
-            <span>{{ item.label }}</span>
-            <strong>{{ formatCurrency(item.total) }}</strong>
-          </li>
+        <ul v-if="kasReport.summary" class="rows-list">
+          <li><span>Uang masuk</span><strong>{{ formatCurrency(kasReport.summary.total_masuk) }}</strong></li>
+          <li><span>Uang keluar</span><strong>{{ formatCurrency(kasReport.summary.total_keluar) }}</strong></li>
+          <li><span>Saldo</span><strong>{{ formatCurrency(kasReport.summary.saldo) }}</strong></li>
         </ul>
         <div v-else class="empty-state">Belum ada data keuangan untuk bulan ini.</div>
       </div>
@@ -36,13 +35,13 @@
         <div class="panel-header">
           <h2>Transaksi terbaru</h2>
         </div>
-        <ul v-if="financeReport.transactions?.length" class="rows-list compact">
-          <li v-for="item in financeReport.transactions" :key="`${item.type}-${item.id}`">
+        <ul v-if="kasReport.data?.length" class="rows-list compact">
+          <li v-for="item in kasReport.data.slice(0, 5)" :key="item.id">
             <div>
-              <span class="transaction-type">{{ item.type }}</span>
-              <small>{{ item.nama }}</small>
+              <span class="transaction-type">{{ item.kategori }}</span>
+              <small>{{ item.judul }}</small>
             </div>
-            <strong>{{ formatCurrency(item.jumlah) }}</strong>
+            <strong>{{ formatCurrency(item.nominal) }}</strong>
           </li>
         </ul>
         <div v-else class="empty-state">Belum ada transaksi yang tercatat.</div>
@@ -68,7 +67,7 @@
         </div>
         <div class="status-box danger">
           <span>Tagihan belum lunas</span>
-          <strong>{{ formatCurrency(qurbanRegistrations.filter(item => item.status !== 'lunas').reduce((total, item) => total + Number(item.selisih_nominal || item.nominal_terbaru || item.jumlah || 0), 0)) }}</strong>
+          <strong>{{ formatCurrency(qurbanRegistrations.filter(item => item.status !== 'lunas').reduce((total, item) => total + Math.max(0, Number(item.jumlah || 0) - Number(item.total_dibayar || 0)), 0)) }}</strong>
         </div>
       </div>
     </section>
@@ -78,10 +77,10 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { CircleDollarSign, Landmark, PackageSearch, Wallet } from 'lucide-vue-next'
-import infaqService from '@/services/infaqService'
+import kasService from '@/services/kasService'
 import qurbanService from '@/services/qurbanService'
 
-const financeReport = ref({ summary: null, monthly: [], transactions: [] })
+const kasReport = ref({ summary: null, data: [] })
 const qurbanRegistrations = ref([])
 
 const hariIni = new Date().toLocaleDateString('id-ID', {
@@ -92,9 +91,9 @@ const hariIni = new Date().toLocaleDateString('id-ID', {
 })
 
 const statCards = computed(() => [
-  { label: 'Total Infaq', value: formatCurrency(financeReport.value.summary?.total_infaq || 0), variant: 'blue', icon: Wallet },
-  { label: 'Total Qurban', value: formatCurrency(financeReport.value.summary?.total_qurban || 0), variant: 'green', icon: CircleDollarSign },
-  { label: 'Total Keseluruhan', value: formatCurrency(financeReport.value.summary?.total_keseluruhan || 0), variant: 'purple', icon: Landmark },
+  { label: 'Total Uang Masuk', value: formatCurrency(kasReport.value.summary?.total_masuk || 0), variant: 'green', icon: Wallet },
+  { label: 'Total Uang Keluar', value: formatCurrency(kasReport.value.summary?.total_keluar || 0), variant: 'blue', icon: Landmark },
+  { label: 'Saldo Kas', value: formatCurrency(kasReport.value.summary?.saldo || 0), variant: 'purple', icon: CircleDollarSign },
   { label: 'Menunggu Konfirmasi', value: String(qurbanRegistrations.value.filter(item => item.status === 'terdaftar').length || 0), variant: 'amber', icon: PackageSearch },
 ])
 
@@ -102,12 +101,16 @@ function formatCurrency(value) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value || 0)
 }
 
-async function loadFinanceReport() {
+async function loadKas() {
   try {
-    const response = await infaqService.getReport()
-    financeReport.value = response || financeReport.value
+    const [response, transactions] = await Promise.all([
+      kasService.publicSummary(),
+      kasService.index(new Date().toISOString().slice(0, 7)),
+    ])
+    kasReport.value = { ...kasReport.value, summary: response.summary || kasReport.value.summary }
+    kasReport.value.data = transactions.data || []
   } catch (error) {
-    console.error('Gagal memuat laporan keuangan', error)
+    console.error('Gagal memuat ringkasan kas', error)
   }
 }
 
@@ -121,7 +124,7 @@ async function loadQurban() {
 }
 
 onMounted(() => {
-  loadFinanceReport()
+  loadKas()
   loadQurban()
 })
 </script>

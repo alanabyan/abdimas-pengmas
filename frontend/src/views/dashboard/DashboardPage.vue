@@ -26,7 +26,7 @@
         </div>
         <div class="stat-num">
           <span v-if="loading" class="skel-num"></span>
-          <span v-else>{{ stat[card.key] ?? 0 }}</span>
+          <span v-else>{{ card.currency ? formatCurrency(kasSummary[card.key]) : (stat[card.key] ?? 0) }}</span>
         </div>
         <div class="stat-label">{{ card.label }}</div>
         <div class="stat-bar-line" :style="{ background: card.color }"></div>
@@ -127,6 +127,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import dashboardService from '@/services/dashboardService'
+import kasService from '@/services/kasService'
 
 import {
   LayoutGrid,
@@ -144,6 +145,8 @@ import {
   UserCheck,
   Settings,
   RotateCcw,
+  Wallet,
+  CircleDollarSign,
 } from 'lucide-vue-next'
 
 import {
@@ -166,6 +169,7 @@ const refreshing = ref(false)
 const stat = ref({})
 const grafikBarang = ref([])
 const grafikPeminjaman = ref([])
+const kasSummary = ref({ total_masuk: 0, total_keluar: 0 })
 
 const barChartCanvas = ref(null)
 let barChartInstance = null
@@ -181,6 +185,8 @@ const statCards = [
   { key: 'peminjaman_aktif', label: 'Peminjaman Aktif', variant: 'card-green', color: '#16a34a', icon: ClipboardCheck },
   { key: 'peminjaman_terlambat', label: 'Terlambat', variant: 'card-amber', color: '#d97706', icon: Clock },
   { key: 'barang_rusak_hilang', label: 'Rusak / Hilang', variant: 'card-red', color: '#dc2626', icon: AlertTriangle },
+  { key: 'total_masuk', label: 'Total Uang Masuk', variant: 'card-green', color: '#16a34a', icon: Wallet, currency: true },
+  { key: 'total_keluar', label: 'Total Uang Keluar', variant: 'card-red', color: '#dc2626', icon: CircleDollarSign, currency: true },
 ]
 
 const quickLinks = [
@@ -190,6 +196,7 @@ const quickLinks = [
   { to: '/warga', label: 'Data Warga', bg: '#ecfeff', color: '#0891b2', icon: UserCheck },
   { to: '/marbot', label: 'Manajemen Marbot', bg: '#fff7ed', color: '#d97706', icon: Settings },
   { to: '/pengembalian', label: 'Validasi Pengembalian', bg: '#fef2f2', color: '#dc2626', icon: RotateCcw },
+  { to: '/kas', label: 'Kas & Donasi', bg: '#ecfdf5', color: '#176b4b', icon: Wallet },
 ]
 
 const barColors = ['#1e3a5f', '#6366f1', '#0891b2', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#be185d', '#0f766e']
@@ -205,6 +212,10 @@ function formatBulan(label) {
   if (!label) return ''
   const [, m] = label.split('-')
   return ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][parseInt(m) - 1] ?? label
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value || 0)
 }
 
 async function renderBarChart() {
@@ -280,14 +291,16 @@ async function loadAll(isRefresh = false) {
   else loading.value = true
 
   try {
-    const [s, b, p] = await Promise.all([
+    const [s, b, p, kas] = await Promise.all([
       dashboardService.getStatistik(),
       dashboardService.getGrafikBarang(),
       dashboardService.getGrafikPeminjaman(),
+      kasService.publicSummary(),
     ])
     stat.value = s
     grafikBarang.value = b
     grafikPeminjaman.value = p
+    kasSummary.value = kas.summary || kasSummary.value
   } catch { /* silent */ }
   finally {
     loading.value = false

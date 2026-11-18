@@ -9,6 +9,7 @@ use App\Models\QurbanRegistration;
 use App\Models\QurbanSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class QurbanController extends Controller
@@ -30,10 +31,20 @@ class QurbanController extends Controller
             'is_active' => true,
         ]);
 
-        $registrations = QurbanRegistration::latest()->get();
+        $registrations = QurbanRegistration::with('payments')->latest()->get();
+        $registrations->each(function (QurbanRegistration $registration) {
+            $paid = (int) $registration->payments->sum('amount');
+            $target = (int) $registration->jumlah;
+            $registration->setAttribute('total_dibayar', $paid);
+            $registration->setAttribute('jumlah_pembayaran', $registration->payments->count());
+            $registration->setAttribute('progres_pembayaran', $target > 0
+                ? min(100, (int) floor($paid / $target * 100))
+                : 0);
+        });
         $filled = $registrations->count();
         $hargaSapi = (int) $setting->harga_sapi;
-        $nominalPerOrang = (int) ceil($hargaSapi / self::KUOTA_TOTAL);
+        $kuotaTotal = (int) ($setting->kuota_total ?? self::KUOTA_TOTAL);
+        $nominalPerOrang = (int) ceil($hargaSapi / $kuotaTotal);
         $groups = $registrations->groupBy(function ($registration) {
             return $registration->sapi_id ?: 'SAPI-' . $registration->id;
         })->map(function ($items, $sapiId) {
@@ -61,8 +72,8 @@ class QurbanController extends Controller
             'data' => $registrations,
             'groups' => $groups,
             'summary' => [
-                'kuota_total' => (int) ($setting->kuota_total ?? self::KUOTA_TOTAL),
-                'kuota_tersedia' => max(0, (int) ($setting->kuota_total ?? self::KUOTA_TOTAL) - $filled),
+                'kuota_total' => $kuotaTotal,
+                'kuota_tersedia' => max(0, $kuotaTotal - $filled),
                 'total_terdaftar' => $filled,
                 'total_nominal' => (int) $registrations->sum('jumlah'),
                 'harga_sapi' => $hargaSapi,
@@ -93,8 +104,8 @@ class QurbanController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        if (! $request->user() instanceof Bendahara) {
-            return response()->json(['message' => 'Akses hanya untuk bendahara.'], 403);
+        if (! $request->user() instanceof Marbot) {
+            return response()->json(['message' => 'Hanya marbot yang dapat menambahkan peserta qurban.'], 403);
         }
 
         $validator = Validator::make($request->all(), [
@@ -142,9 +153,10 @@ class QurbanController extends Controller
             ], 422);
         }
 
+        $quota = (int) (QurbanSetting::where('is_active', true)->latest()->value('kuota_total') ?? self::KUOTA_TOTAL);
         $registered = QurbanRegistration::count();
         $slotsNeeded = count($names);
-        $availableSlots = max(0, self::KUOTA_TOTAL - $registered);
+        $availableSlots = max(0, $quota - $registered);
 
         if ($slotsNeeded > $availableSlots) {
             return response()->json([
@@ -165,8 +177,8 @@ class QurbanController extends Controller
                 'selisih_nominal' => 0,
                 'sapi_id' => $sapiId,
                 'bagian' => '1/7',
-                'kuota_total' => self::KUOTA_TOTAL,
-                'kuota_tersedia' => max(0, self::KUOTA_TOTAL - (QurbanRegistration::count() + 1)),
+                'kuota_total' => $quota,
+                'kuota_tersedia' => max(0, $quota - (QurbanRegistration::count() + 1)),
                 'catatan' => $request->catatan,
                 'status' => 'terdaftar',
             ]);
@@ -179,8 +191,8 @@ class QurbanController extends Controller
                 'sapi_id' => $sapiId,
                 'names' => array_map(fn ($item) => $item->nama, $created),
                 'bagian' => '1/7',
-                'kuota_total' => self::KUOTA_TOTAL,
-                'kuota_tersedia' => max(0, self::KUOTA_TOTAL - QurbanRegistration::count()),
+                'kuota_total' => $quota,
+                'kuota_tersedia' => max(0, $quota - QurbanRegistration::count()),
                 'jumlah' => $request->jumlah,
             ],
         ], 201);
@@ -188,19 +200,25 @@ class QurbanController extends Controller
 
     public function updateStatus(Request $request, QurbanRegistration $qurban): JsonResponse
     {
-        if (! $request->user() instanceof Bendahara) {
-            return response()->json(['message' => 'Akses hanya untuk bendahara.'], 403);
+        if (! $request->user() instanceof Marbot) {
+            return response()->json(['message' => 'Hanya marbot yang dapat mengubah status qurban.'], 403);
         }
 
         $validated = $request->validate([
-            'status' => ['required', 'string', 'in:terdaftar,terkonfirmasi,lunas,ditolak'],
+            'status' => ['required', 'string', 'in:terdaftar,terkonfirmasi,ditolak'],
         ]);
+
+        if ($qurban->payments()->exists()) {
+            return response()->json([
+                'message' => 'Status peserta yang sudah memiliki pembayaran mengikuti progres cicilan.',
+            ], 422);
+        }
 
         $payload = [
             'status' => $validated['status'],
         ];
 
-        if (in_array($validated['status'], ['terkonfirmasi', 'lunas'], true) && empty($qurban->tanggal_konfirmasi)) {
+        if ($validated['status'] === 'terkonfirmasi' && empty($qurban->tanggal_konfirmasi)) {
             $payload['tanggal_konfirmasi'] = now();
         }
 
@@ -216,10 +234,59 @@ class QurbanController extends Controller
         ]);
     }
 
+    public function storePayment(Request $request, QurbanRegistration $qurban): JsonResponse
+    {
+        if (! $request->user() instanceof Marbot) {
+            return response()->json(['message' => 'Hanya marbot yang dapat mencatat pembayaran qurban.'], 403);
+        }
+
+        $validated = $request->validate([
+            'amount' => ['required', 'integer', 'min:1'],
+            'paid_at' => ['required', 'date'],
+            'note' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $payment = DB::transaction(function () use ($qurban, $validated) {
+            $registration = QurbanRegistration::whereKey($qurban->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $alreadyPaid = (int) $registration->payments()->sum('amount');
+            $remaining = max(0, (int) $registration->jumlah - $alreadyPaid);
+
+            if ($registration->status === 'ditolak') {
+                abort(422, 'Pembayaran tidak dapat dicatat untuk peserta yang ditolak.');
+            }
+
+            if ($validated['amount'] > $remaining) {
+                abort(422, 'Nominal pembayaran melebihi sisa tagihan sebesar Rp ' . number_format($remaining, 0, ',', '.') . '.');
+            }
+
+            $payment = $registration->payments()->create([
+                'payment_number' => (int) $registration->payments()->max('payment_number') + 1,
+                'amount' => $validated['amount'],
+                'paid_at' => $validated['paid_at'],
+                'note' => $validated['note'] ?? null,
+            ]);
+
+            $totalPaid = $alreadyPaid + (int) $payment->amount;
+            $registration->update([
+                'status' => $totalPaid >= (int) $registration->jumlah ? 'lunas' : 'terkonfirmasi',
+                'tanggal_konfirmasi' => $registration->tanggal_konfirmasi ?? now(),
+            ]);
+
+            return $payment;
+        });
+
+        return response()->json([
+            'message' => 'Pembayaran qurban berhasil dicatat.',
+            'data' => $payment->load('registration.payments'),
+        ], 201);
+    }
+
     public function updateSetting(Request $request): JsonResponse
     {
-        if (! $request->user() instanceof Bendahara) {
-            return response()->json(['message' => 'Akses hanya untuk bendahara.'], 403);
+        if (! $request->user() instanceof Marbot) {
+            return response()->json(['message' => 'Hanya marbot yang dapat mengubah pengaturan qurban.'], 403);
         }
 
         $validated = $request->validate([

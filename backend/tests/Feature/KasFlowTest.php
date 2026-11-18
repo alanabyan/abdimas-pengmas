@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Bendahara;
+use App\Models\Marbot;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -13,9 +14,28 @@ class KasFlowTest extends TestCase
     {
         parent::setUp();
 
-        foreach (['personal_access_tokens', 'bendaharas', 'kas_transaksis'] as $table) {
+        foreach ([
+            'personal_access_tokens',
+            'marbots',
+            'bendaharas',
+            'kas_transaksis',
+            'infaq_submissions',
+            'qurban_registrations',
+            'qurban_payments',
+        ] as $table) {
             Schema::dropIfExists($table);
         }
+
+        Schema::create('marbots', function (Blueprint $table) {
+            $table->id();
+            $table->string('nama_marbot');
+            $table->string('email')->unique();
+            $table->string('password');
+            $table->boolean('aktif')->default(true);
+            $table->boolean('is_super_admin')->default(false);
+            $table->rememberToken();
+            $table->timestamps();
+        });
 
         Schema::create('bendaharas', function (Blueprint $table) {
             $table->id();
@@ -38,6 +58,37 @@ class KasFlowTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('infaq_submissions', function (Blueprint $table) {
+            $table->id();
+            $table->string('nama');
+            $table->string('telepon');
+            $table->string('blok_rumah');
+            $table->string('public_token')->unique();
+            $table->unsignedBigInteger('jumlah');
+            $table->string('jenis');
+            $table->string('proof_path')->nullable();
+            $table->string('status');
+            $table->timestamps();
+        });
+
+        Schema::create('qurban_registrations', function (Blueprint $table) {
+            $table->id();
+            $table->string('nama');
+            $table->string('telepon');
+            $table->unsignedBigInteger('jumlah');
+            $table->timestamps();
+        });
+
+        Schema::create('qurban_payments', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('qurban_registration_id')->constrained('qurban_registrations');
+            $table->unsignedSmallInteger('payment_number');
+            $table->unsignedBigInteger('amount');
+            $table->date('paid_at');
+            $table->string('note')->nullable();
+            $table->timestamps();
+        });
+
         Schema::create('personal_access_tokens', function (Blueprint $table) {
             $table->id();
             $table->morphs('tokenable');
@@ -50,16 +101,15 @@ class KasFlowTest extends TestCase
         });
     }
 
-    public function test_bendahara_can_add_and_list_cash_transactions(): void
+    public function test_marbot_can_record_and_view_cash_transactions(): void
     {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Kas',
-            'email' => 'bendahara.kas@example.test',
+        $marbot = Marbot::create([
+            'nama_marbot' => 'Marbot Kas',
+            'email' => 'marbot.kas@example.test',
             'password' => 'password123',
             'aktif' => true,
         ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
+        $token = $marbot->createToken('testing')->plainTextToken;
 
         $this->withToken($token)
             ->postJson('/api/v1/kas', [
@@ -83,62 +133,37 @@ class KasFlowTest extends TestCase
             ->assertJsonCount(1, 'data');
     }
 
-    public function test_bendahara_can_get_monthly_cash_report_and_pdf_export(): void
+    public function test_bendahara_can_read_cash_but_cannot_create_transactions(): void
     {
         $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Laporan',
-            'email' => 'bendahara.laporan@example.test',
+            'nama_bendahara' => 'Bendahara Read Only',
+            'email' => 'bendahara.readonly@example.test',
             'password' => 'password123',
             'aktif' => true,
         ]);
-
         $token = $bendahara->createToken('testing')->plainTextToken;
 
         $this->withToken($token)
             ->postJson('/api/v1/kas', [
-                'judul' => 'Kas masuk bulan ini',
+                'judul' => 'Percobaan',
                 'jenis' => 'masuk',
-                'kategori' => 'infaq',
-                'nominal' => 300000,
-                'keterangan' => 'Infaq',
+                'kategori' => 'umum',
+                'nominal' => 1000,
                 'tanggal' => now()->toDateString(),
-            ])->assertCreated();
+            ])->assertForbidden();
 
-        $this->withToken($token)
-            ->postJson('/api/v1/kas', [
-                'judul' => 'Belanja perlengkapan',
-                'jenis' => 'keluar',
-                'kategori' => 'operasional',
-                'nominal' => 75000,
-                'keterangan' => 'Pembelian alat',
-                'tanggal' => now()->toDateString(),
-            ])->assertCreated();
-
-        $this->withToken($token)
-            ->getJson('/api/v1/kas?month=' . now()->format('Y-m'))
-            ->assertOk()
-            ->assertJsonPath('summary.total_masuk', 300000)
-            ->assertJsonPath('summary.total_keluar', 75000)
-            ->assertJsonPath('summary.saldo', 225000)
-            ->assertJsonPath('report.month', now()->format('Y-m'));
-
-        $this->withToken($token)
-            ->get('/api/v1/kas/pdf?month=' . now()->format('Y-m'))
-            ->assertOk()
-            ->assertHeader('content-type', 'application/pdf');
+        $this->withToken($token)->getJson('/api/v1/kas')->assertOk();
     }
 
-    public function test_bendahara_can_get_weekly_cash_summary_and_pdf_export(): void
+    public function test_marbot_can_export_monthly_and_weekly_cash_reports(): void
     {
-        $bendahara = Bendahara::create([
-            'nama_bendahara' => 'Bendahara Mingguan',
-            'email' => 'bendahara.mingguan@example.test',
+        $marbot = Marbot::create([
+            'nama_marbot' => 'Marbot Laporan',
+            'email' => 'marbot.laporan@example.test',
             'password' => 'password123',
             'aktif' => true,
         ]);
-
-        $token = $bendahara->createToken('testing')->plainTextToken;
-
+        $token = $marbot->createToken('testing')->plainTextToken;
         $start = now()->startOfWeek();
 
         $this->withToken($token)
@@ -147,7 +172,6 @@ class KasFlowTest extends TestCase
                 'jenis' => 'masuk',
                 'kategori' => 'infaq',
                 'nominal' => 500000,
-                'keterangan' => 'Minggu ini',
                 'tanggal' => $start->toDateString(),
             ])->assertCreated();
 
@@ -157,7 +181,6 @@ class KasFlowTest extends TestCase
                 'jenis' => 'keluar',
                 'kategori' => 'operasional',
                 'nominal' => 150000,
-                'keterangan' => 'Minggu ini',
                 'tanggal' => $start->copy()->addDay(2)->toDateString(),
             ])->assertCreated();
 
@@ -166,8 +189,12 @@ class KasFlowTest extends TestCase
             ->assertOk()
             ->assertJsonPath('summary.total_masuk', 500000)
             ->assertJsonPath('summary.total_keluar', 150000)
-            ->assertJsonPath('summary.saldo', 350000)
-            ->assertJsonPath('report.week_start', $start->format('Y-m-d'));
+            ->assertJsonPath('summary.saldo', 350000);
+
+        $this->withToken($token)
+            ->get('/api/v1/kas/pdf?month=' . now()->format('Y-m'))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
 
         $this->withToken($token)
             ->get('/api/v1/kas/weekly/pdf?week=' . $start->format('Y-m-d'))

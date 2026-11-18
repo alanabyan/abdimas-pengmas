@@ -8,6 +8,7 @@
       <nav aria-label="Navigasi utama">
         <a href="#profil">Tentang</a>
         <a href="#program">Program</a>
+        <a href="#kas">Kas</a>
         <a href="#infaq">Infaq</a>
       </nav>
       <RouterLink class="login-link" to="/login"><LogIn :size="17" /> Login</RouterLink>
@@ -54,33 +55,90 @@
       </div>
     </section>
 
+    <section id="kas" class="cash-section">
+      <div class="section-kicker">Transparansi kas <span>03</span></div>
+      <div class="cash-heading">
+        <div>
+          <h2>Ringkasan kas</h2>
+          <p>Akumulasi transaksi kas, donasi terverifikasi, dan cicilan qurban yang tercatat.</p>
+        </div>
+        <p v-if="kasError" class="cash-error" role="status">{{ kasError }}</p>
+      </div>
+      <div class="cash-summary">
+        <article>
+          <span>Total uang masuk</span>
+          <strong>{{ formatCurrency(cashSummary.total_masuk) }}</strong>
+        </article>
+        <article>
+          <span>Total uang keluar</span>
+          <strong>{{ formatCurrency(cashSummary.total_keluar) }}</strong>
+        </article>
+        <article>
+          <span>Saldo kas</span>
+          <strong>{{ formatCurrency(cashSummary.saldo) }}</strong>
+        </article>
+      </div>
+    </section>
+
     <section id="infaq" class="donation-section">
       <div class="donation-intro">
-        <div class="section-kicker">Titipkan kebaikan <span>03</span></div>
+        <div class="section-kicker">Titipkan kebaikan <span>04</span></div>
         <h2>Satu niat baik, banyak kemungkinan manfaat.</h2>
-        <p>Isi formulir infaq. Bendahara kami akan menghubungi Anda untuk konfirmasi penyaluran. Pengiriman formulir ini belum merupakan bukti pembayaran.</p>
+        <p>Isi data donasi, transfer sesuai instruksi, lalu unggah bukti pembayaran. Donasi akan diverifikasi oleh pengurus.</p>
         <div class="donation-promise"><ShieldCheck :size="20" /><span>Data digunakan untuk menindaklanjuti pengajuan Anda.</span></div>
       </div>
 
-      <form class="donation-form" @submit.prevent="submitInfaq">
-        <div class="form-heading"><div><span>FORMULIR DONASI</span><h3>Infaq</h3></div><HandCoins :size="25" /></div>
+      <form v-if="step === 1" class="donation-form" @submit.prevent="submitInfaq">
+        <div class="form-heading"><div><span>LANGKAH 1 DARI 2</span><h3>Data donasi</h3></div><HandCoins :size="25" /></div>
         <label>Nama lengkap<input v-model.trim="form.nama" required maxlength="150" autocomplete="name" placeholder="Nama Anda" /></label>
         <div class="field-pair">
           <label>Nomor WhatsApp<input v-model.trim="form.telepon" required maxlength="30" autocomplete="tel" inputmode="tel" placeholder="08xx xxxx xxxx" /></label>
-          <label>Email <span>(opsional)</span><input v-model.trim="form.email" type="email" maxlength="255" autocomplete="email" placeholder="nama@email.com" /></label>
+          <label>Blok rumah<input v-model.trim="form.blok_rumah" required maxlength="100" placeholder="Contoh: Blok A1 No. 12" /></label>
         </div>
+        <label>Jenis donasi
+          <select v-model="form.jenis" required>
+            <option value="zakat">Zakat</option>
+            <option value="infaq">Infaq</option>
+            <option value="sedekah">Sedekah</option>
+          </select>
+        </label>
         <label>Nominal (Rp)<div class="amount-input"><span>Rp</span><input v-model.number="form.jumlah" type="number" min="1000" max="1000000000" step="1000" required inputmode="numeric" placeholder="100000" /></div></label>
         <div class="amount-presets" aria-label="Pilihan nominal">
           <button v-for="amount in presets" :key="amount" type="button" @click="form.jumlah = amount">{{ formatRupiah(amount) }}</button>
         </div>
-        <label>Pesan <span>(opsional)</span><textarea v-model.trim="form.catatan" maxlength="1000" rows="3" placeholder="Titip doa atau catatan untuk pengurus"></textarea></label>
         <p v-if="errorMessage" class="form-message error" role="alert">{{ errorMessage }}</p>
-        <p v-if="successMessage" class="form-message success" role="status">{{ successMessage }}</p>
         <button class="submit-button" type="submit" :disabled="submitting">
-          {{ submitting ? 'Mengirim pengajuan...' : 'Kirim pengajuan' }} <ArrowRight v-if="!submitting" :size="18" />
+          {{ submitting ? 'Menyimpan...' : 'Lanjut ke instruksi transfer' }} <ArrowRight v-if="!submitting" :size="18" />
         </button>
-        <p class="form-footnote">Tidak ada pembayaran yang diproses melalui formulir ini.</p>
+        <p class="form-footnote">Data akan disimpan sebagai donasi yang menunggu transfer.</p>
       </form>
+
+      <form v-else-if="step === 2" class="donation-form" @submit.prevent="uploadReceipt">
+        <div class="form-heading"><div><span>LANGKAH 2 DARI 2</span><h3>Instruksi transfer</h3></div><HandCoins :size="25" /></div>
+        <div class="transfer-summary">
+          <span>{{ donationKind }}</span>
+          <strong>{{ formatCurrency(form.jumlah) }}</strong>
+        </div>
+        <div class="bank-details">
+          <span>Bank BCA</span>
+          <strong>{{ transferAccount.accountNumber }}</strong>
+          <small>a.n. {{ transferAccount.accountName }}</small>
+        </div>
+        <p class="transfer-note">Transfer tepat sesuai nominal di atas, lalu unggah bukti transfer (JPG, PNG, atau PDF; maks. 5 MB).</p>
+        <label>Bukti transfer
+          <input type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" required @change="selectProof" />
+        </label>
+        <p v-if="errorMessage" class="form-message error" role="alert">{{ errorMessage }}</p>
+        <button class="submit-button" type="submit" :disabled="submitting || !proofFile">
+          {{ submitting ? 'Mengunggah...' : 'Kirim bukti transfer' }} <ArrowRight v-if="!submitting" :size="18" />
+        </button>
+      </form>
+
+      <div v-else class="donation-form completion-card" role="status">
+        <div class="form-heading"><div><span>DONASI TERCATAT</span><h3>Terima kasih</h3></div><ShieldCheck :size="25" /></div>
+        <p>{{ successMessage }}</p>
+        <button class="submit-button" type="button" @click="resetDonation">Kirim donasi lainnya</button>
+      </div>
     </section>
 
     <footer class="site-footer">
@@ -92,19 +150,36 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ArrowDownRight, ArrowRight, ArrowUpRight, BookOpenCheck, HandCoins, HandHeart, HeartHandshake, LogIn, ShieldCheck, Sprout } from 'lucide-vue-next'
 import infaqService from '@/services/infaqService'
+import kasService from '@/services/kasService'
 
 const presets = [25000, 50000, 100000, 250000]
-const form = reactive({ nama: '', telepon: '', email: '', jumlah: 100000, jenis: 'infaq', catatan: '' })
+const transferAccount = Object.freeze({ accountNumber: '923901283901', accountName: 'asep' })
+const form = reactive({ nama: '', telepon: '', blok_rumah: '', jumlah: 100000, jenis: 'infaq' })
+const step = ref(1)
+const publicToken = ref('')
+const proofFile = ref(null)
 const submitting = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+const cashSummary = ref({ total_masuk: 0, total_keluar: 0, saldo: 0 })
+const kasError = ref('')
+
+const donationKind = computed(() => form.jenis.charAt(0).toUpperCase() + form.jenis.slice(1))
 
 function formatRupiah(value) {
   return new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 0 }).format(value)
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value || 0)
+}
+
+function selectProof(event) {
+  proofFile.value = event.target.files?.[0] || null
 }
 
 async function submitInfaq() {
@@ -113,16 +188,49 @@ async function submitInfaq() {
   successMessage.value = ''
 
   try {
-    const payload = { ...form, jenis: 'infaq' }
+    const payload = { ...form, jumlah: Number(form.jumlah) }
     const response = await infaqService.submit(payload)
-    successMessage.value = response.message
-    Object.assign(form, { nama: '', telepon: '', email: '', jumlah: 100000, jenis: 'infaq', catatan: '' })
+    publicToken.value = response.data.public_token
+    step.value = 2
   } catch (error) {
     errorMessage.value = error?.response?.data?.message || 'Pengajuan belum dapat dikirim. Silakan coba kembali.'
   } finally {
     submitting.value = false
   }
 }
+
+async function uploadReceipt() {
+  submitting.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await infaqService.uploadReceipt(publicToken.value, proofFile.value)
+    successMessage.value = response.message
+    step.value = 3
+  } catch (error) {
+    errorMessage.value = error?.response?.data?.message || 'Bukti transfer belum dapat diunggah. Silakan coba kembali.'
+  } finally {
+    submitting.value = false
+  }
+}
+
+function resetDonation() {
+  Object.assign(form, { nama: '', telepon: '', blok_rumah: '', jumlah: 100000, jenis: 'infaq' })
+  step.value = 1
+  publicToken.value = ''
+  proofFile.value = null
+  errorMessage.value = ''
+  successMessage.value = ''
+}
+
+onMounted(async () => {
+  try {
+    const response = await kasService.publicSummary()
+    cashSummary.value = response.summary || cashSummary.value
+  } catch (error) {
+    kasError.value = error?.response?.data?.message || 'Ringkasan kas belum dapat dimuat.'
+  }
+})
 </script>
 
 <style scoped>
@@ -182,6 +290,17 @@ h2 { font: 800 35px/1.2 'Manrope', sans-serif; letter-spacing: 0; }
 .program-grid article svg { color: var(--green); }
 .program-grid h3 { margin: 17px 0 8px; font: 700 16px 'Manrope', sans-serif; }
 .program-grid p { max-width: 300px; color: #68756c; font-size: 12px; line-height: 1.75; margin-bottom: 0; }
+.cash-section { padding: 68px max(34px, calc((100% - 1172px) / 2)); background: #fff; }
+.cash-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin: 30px 0 20px; }
+.cash-heading h2 { margin: 0 0 7px; }
+.cash-heading p { max-width: 550px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.cash-heading .cash-error { color: #a5352b; }
+.cash-summary { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); background: #f9fbf7; }
+.cash-summary article { padding: 20px 22px; }
+.cash-summary article + article { border-left: 1px solid var(--line); }
+.cash-summary span, .cash-summary strong { display: block; }
+.cash-summary span { color: var(--muted); font-size: 10px; text-transform: uppercase; font-weight: 800; }
+.cash-summary strong { margin-top: 9px; color: var(--green-dark); font: 800 21px 'Manrope', sans-serif; }
 .donation-section { max-width: 1240px; padding: 88px 34px 96px; margin: auto; display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 90px; }
 .donation-intro .section-kicker { border-bottom: 0; padding: 0; }
 .donation-intro h2 { max-width: 460px; margin: 32px 0 15px; }
@@ -198,8 +317,8 @@ h2 { font: 800 35px/1.2 'Manrope', sans-serif; letter-spacing: 0; }
 .kind-switch button.selected { background: #eaf2e9; color: var(--green-dark); }
 .donation-form label { display: block; color: #435349; font-size: 10px; font-weight: 700; margin-bottom: 14px; }
 .donation-form label > span { color: #8b978e; font-weight: 400; }
-.donation-form input, .donation-form textarea { display: block; box-sizing: border-box; width: 100%; margin-top: 7px; border: 1px solid #dce4dc; border-radius: 2px; padding: 11px 12px; background: #fcfdfb; color: var(--ink); font: 400 12px 'DM Sans', sans-serif; outline: none; }
-.donation-form input:focus, .donation-form textarea:focus { border-color: #5c9674; box-shadow: 0 0 0 2px rgba(23, 107, 75, .1); }
+.donation-form input, .donation-form textarea, .donation-form select { display: block; box-sizing: border-box; width: 100%; margin-top: 7px; border: 1px solid #dce4dc; border-radius: 2px; padding: 11px 12px; background: #fcfdfb; color: var(--ink); font: 400 12px 'DM Sans', sans-serif; outline: none; }
+.donation-form input:focus, .donation-form textarea:focus, .donation-form select:focus { border-color: #5c9674; box-shadow: 0 0 0 2px rgba(23, 107, 75, .1); }
 .donation-form input::placeholder, .donation-form textarea::placeholder { color: #a3ada5; }
 .field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
 .amount-input { display: flex; align-items: center; margin-top: 7px; border: 1px solid #dce4dc; background: #fcfdfb; }
@@ -210,6 +329,12 @@ h2 { font: 800 35px/1.2 'Manrope', sans-serif; letter-spacing: 0; }
 .amount-presets button { border: 1px solid #dce4dc; background: white; color: #53645a; border-radius: 2px; padding: 6px 9px; font: 600 10px 'DM Sans', sans-serif; cursor: pointer; }
 .amount-presets button:hover { border-color: var(--green); color: var(--green); }
 .donation-form textarea { resize: vertical; min-height: 72px; }
+.transfer-summary { padding: 12px 14px; background: #edf5ef; display: flex; justify-content: space-between; align-items: center; gap: 12px; color: var(--green-dark); font-size: 11px; text-transform: uppercase; font-weight: 800; }
+.transfer-summary strong { font-size: 16px; }
+.bank-details { display: grid; gap: 5px; padding: 18px; border: 1px solid var(--line); margin-top: 13px; }
+.bank-details span, .bank-details small { color: var(--muted); font-size: 10px; }
+.bank-details strong { font: 800 20px 'Manrope', sans-serif; letter-spacing: .04em; }
+.transfer-note, .completion-card > p { color: var(--muted); font-size: 11px; line-height: 1.7; margin: 14px 0; }
 .submit-button { width: 100%; cursor: pointer; }
 .submit-button:disabled { opacity: .65; cursor: wait; transform: none; }
 .form-message { padding: 10px 11px; font-size: 11px; line-height: 1.5; }
@@ -229,6 +354,7 @@ h2 { font: 800 35px/1.2 'Manrope', sans-serif; letter-spacing: 0; }
   .profile-section, .program-band { padding-left: 22px; padding-right: 22px; }
   .profile-grid { gap: 38px; }
   .donation-section { padding: 72px 22px; gap: 38px; }
+  .cash-section { padding: 58px 22px; }
   .site-footer { padding-left: 22px; padding-right: 22px; }
 }
 @media (max-width: 620px) {
@@ -254,6 +380,10 @@ h2 { font: 800 35px/1.2 'Manrope', sans-serif; letter-spacing: 0; }
   .program-grid article { padding-top: 15px; }
   .program-grid h3 { margin-top: 10px; }
   .donation-section { grid-template-columns: 1fr; gap: 30px; padding: 58px 18px 68px; }
+  .cash-section { padding: 48px 18px; }
+  .cash-heading { align-items: flex-start; flex-direction: column; }
+  .cash-summary { grid-template-columns: 1fr; }
+  .cash-summary article + article { border-left: 0; border-top: 1px solid var(--line); }
   .donation-intro h2 { margin-top: 25px; }
   .donation-form { padding: 20px 17px; }
   .field-pair { grid-template-columns: 1fr; gap: 0; }

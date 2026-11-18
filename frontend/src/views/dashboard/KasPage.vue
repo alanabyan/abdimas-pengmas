@@ -4,8 +4,8 @@
       <div class="brand-block">
         <span class="brand-mark">AP</span>
         <div>
-          <p class="eyebrow">Bendahara</p>
-          <h1>Kas Masuk &amp; Keluar</h1>
+          <p class="eyebrow">{{ auth.user?.role || 'Kas' }}</p>
+          <h1>Kas &amp; Donasi</h1>
         </div>
       </div>
 
@@ -57,7 +57,7 @@
           <h2>Catat transaksi</h2>
         </div>
 
-        <form class="transaction-form" @submit.prevent="submitTransaction">
+        <form v-if="canManage" class="transaction-form" @submit.prevent="submitTransaction">
           <div class="field-row">
             <label>
               Judul
@@ -107,6 +107,7 @@
             {{ submitting ? 'Menyimpan...' : 'Simpan transaksi' }}
           </button>
         </form>
+        <p v-else class="read-only-note">Akses bendahara hanya untuk melihat data kas.</p>
       </div>
 
       <div class="panel list-panel">
@@ -130,18 +131,78 @@
         </div>
       </div>
     </section>
+
+    <section class="panel donation-panel">
+      <div class="panel-header donation-header">
+        <div>
+          <h2>Donasi Ziswaf</h2>
+          <p>Data donasi dan bukti transfer yang masuk melalui formulir publik.</p>
+        </div>
+        <button class="ghost-button" type="button" :disabled="infaqLoading" @click="loadDonations">Muat ulang</button>
+      </div>
+
+      <p v-if="infaqError" class="message error">{{ infaqError }}</p>
+      <div v-else-if="infaqLoading" class="empty-state">Memuat donasi...</div>
+      <div v-else-if="!donations.length" class="empty-state">Belum ada donasi Ziswaf.</div>
+      <div v-else class="table-wrap">
+        <table class="donation-table">
+          <thead>
+            <tr>
+              <th>Nama / Blok</th>
+              <th>Jenis</th>
+              <th>Nominal</th>
+              <th>Bukti transfer</th>
+              <th>Status</th>
+              <th v-if="canManage">Verifikasi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in donations" :key="item.id">
+              <td><strong>{{ item.nama }}</strong><small>{{ item.blok_rumah }} · {{ item.telepon }}</small></td>
+              <td class="capitalize">{{ item.jenis }}</td>
+              <td>{{ formatCurrency(item.jumlah) }}</td>
+              <td>
+                <button v-if="item.has_receipt" type="button" class="receipt-button" @click="downloadReceipt(item)">Lihat bukti</button>
+                <span v-else>Belum diunggah</span>
+              </td>
+              <td><span class="status-pill" :class="item.status">{{ formatStatus(item.status) }}</span></td>
+              <td v-if="canManage">
+                <select
+                  v-if="item.status === 'menunggu_konfirmasi'"
+                  class="status-select"
+                  :value="item.status"
+                  @change="updateDonationStatus(item, $event.target.value)"
+                >
+                  <option value="menunggu_konfirmasi">Menunggu konfirmasi</option>
+                  <option value="terkonfirmasi">Terkonfirmasi</option>
+                  <option value="ditolak">Ditolak</option>
+                </select>
+                <span v-else>—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-if="infaqPagination.last_page > 1" class="pagination-bar">
+        <button type="button" :disabled="infaqPagination.current_page <= 1 || infaqLoading" @click="loadDonations(infaqPagination.current_page - 1)">Sebelumnya</button>
+        <span>Halaman {{ infaqPagination.current_page }} dari {{ infaqPagination.last_page }}</span>
+        <button type="button" :disabled="infaqPagination.current_page >= infaqPagination.last_page || infaqLoading" @click="loadDonations(infaqPagination.current_page + 1)">Berikutnya</button>
+      </div>
+    </section>
   </main>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { LogOut } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import kasService from '@/services/kasService'
+import infaqService from '@/services/infaqService'
 
 const auth = useAuthStore()
 const router = useRouter()
+const canManage = computed(() => auth.user?.role === 'marbot')
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -150,6 +211,10 @@ const currentMonth = ref(new Date().toISOString().slice(0, 7))
 const currentWeek = ref(new Date().toISOString().slice(0, 10))
 const summary = ref({ total_masuk: 0, total_keluar: 0, saldo: 0 })
 const transactions = ref([])
+const donations = ref([])
+const infaqLoading = ref(false)
+const infaqError = ref('')
+const infaqPagination = ref({ current_page: 1, last_page: 1 })
 const form = ref({
   judul: '',
   jenis: 'masuk',
@@ -193,6 +258,7 @@ async function loadWeeklyTransactions() {
 }
 
 async function submitTransaction() {
+  if (!canManage.value) return
   submitting.value = true
   message.value = null
 
@@ -224,6 +290,50 @@ async function submitTransaction() {
     }
   } finally {
     submitting.value = false
+  }
+}
+
+async function loadDonations(page = 1) {
+  infaqLoading.value = true
+  infaqError.value = ''
+
+  try {
+    const response = await infaqService.getSubmissions(page)
+    donations.value = response.data || []
+    infaqPagination.value = response.pagination || infaqPagination.value
+  } catch (error) {
+    infaqError.value = error?.response?.data?.message || 'Daftar donasi gagal dimuat.'
+  } finally {
+    infaqLoading.value = false
+  }
+}
+
+async function updateDonationStatus(item, status) {
+  if (!canManage.value) return
+
+  try {
+    await infaqService.updateStatus(item.id, { status })
+    item.status = status
+    infaqError.value = ''
+    await loadTransactions()
+  } catch (error) {
+    infaqError.value = error?.response?.data?.message || 'Status donasi gagal diperbarui.'
+  }
+}
+
+async function downloadReceipt(item) {
+  try {
+    const blob = await infaqService.downloadReceipt(item.id)
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `bukti-ziswaf-${item.id}.${item.proof_extension || 'file'}`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    infaqError.value = error?.response?.data?.message || 'Bukti transfer gagal diunduh.'
   }
 }
 
@@ -277,8 +387,12 @@ function formatDate(value) {
   })
 }
 
+function formatStatus(value) {
+  return (value || '').replaceAll('_', ' ')
+}
+
 function goBack() {
-  router.push({ name: 'DashboardBendahara' })
+  router.push({ name: auth.user?.role === 'bendahara' ? 'DashboardBendahara' : 'Dashboard' })
 }
 
 async function logout() {
@@ -288,6 +402,7 @@ async function logout() {
 
 onMounted(() => {
   loadTransactions()
+  loadDonations()
 })
 </script>
 
@@ -444,6 +559,35 @@ onMounted(() => {
   grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
   gap: 20px;
 }
+
+.donation-panel {
+  max-width: 1200px;
+  margin: 20px auto 0;
+}
+
+.donation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.donation-header h2 { margin-bottom: 6px; }
+.donation-header p, .read-only-note { color: #6d7c74; font-size: 0.85rem; }
+.donation-header p { margin: 0 0 14px; }
+.donation-table { min-width: 700px; }
+.donation-table td { vertical-align: middle; }
+.donation-table td strong, .donation-table td small { display: block; }
+.donation-table td small { color: #6d7c74; margin-top: 4px; }
+.receipt-button { border: 0; background: transparent; padding: 0; color: #176b4b; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.status-pill { display: inline-flex; border-radius: 999px; padding: 5px 8px; background: #fff4dd; color: #8a621d; font-size: 0.7rem; text-transform: capitalize; }
+.status-pill.terkonfirmasi { background: #e8f7ed; color: #0d6b3d; }
+.status-pill.ditolak { background: #fff1f1; color: #b84d4d; }
+.status-select { min-width: 165px; border: 1px solid #dfe8e1; background: #fbfcfb; border-radius: 9px; padding: 8px; color: #1f2b28; font: inherit; }
+.capitalize { text-transform: capitalize; }
+.pagination-bar { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 12px; color: #64766d; font-size: 0.75rem; }
+.pagination-bar button { background: white; border: 1px solid #dfe8e1; color: #3e564c; padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+.pagination-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .panel {
   background: white;

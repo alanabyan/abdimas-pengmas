@@ -1,6 +1,7 @@
 import api from './api'
 
 export default {
+  publicSummary: () => api.get('/kas/summary').then((response) => response.data),
   index: (month = null) => api.get('/kas', { params: month ? { month } : {} }).then((response) => response.data),
   weekly: (week = null) => api.get('/kas/weekly', { params: week ? { week } : {} }).then((response) => response.data),
   store: (payload) => api.post('/kas', payload).then((response) => response.data),

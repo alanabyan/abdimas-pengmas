@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 
 class QurbanRegistration extends Model
@@ -36,4 +37,9 @@ class QurbanRegistration extends Model
         'kuota_tersedia' => 'integer',
         'tanggal_konfirmasi' => 'datetime',
     ];
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(QurbanPayment::class);
+    }
 }

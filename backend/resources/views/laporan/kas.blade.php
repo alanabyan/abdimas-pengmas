@@ -94,12 +94,13 @@
         </thead>
         <tbody>
             @forelse ($transactions as $item)
+                @php($tanggal = data_get($item, 'tanggal'))
                 <tr>
-                    <td>{{ $item->tanggal ? $item->tanggal->translatedFormat('d M Y') : '-' }}</td>
-                    <td>{{ $item->judul }}</td>
-                    <td>{{ $item->kategori }}</td>
-                    <td>{{ $item->jenis }}</td>
-                    <td>Rp {{ number_format((int) $item->nominal, 0, ',', '.') }}</td>
+                    <td>{{ $tanggal ? \Illuminate\Support\Carbon::parse($tanggal)->translatedFormat('d M Y') : '-' }}</td>
+                    <td>{{ data_get($item, 'judul') }}</td>
+                    <td>{{ data_get($item, 'kategori') }}</td>
+                    <td>{{ data_get($item, 'jenis') }}</td>
+                    <td>Rp {{ number_format((int) data_get($item, 'nominal'), 0, ',', '.') }}</td>
                 </tr>
             @empty
                 <tr>

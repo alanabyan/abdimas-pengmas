@@ -183,11 +183,14 @@
                 </svg>
               </div>
               <h3 class="confirm-title">Batalkan Peminjaman?</h3>
-              <p class="confirm-desc">Peminjaman <strong>{{ batalTarget?.warga?.nama_warga ?? batalTarget?.warga?.nama_warga }}</strong> akan dibatalkan dan stok dikembalikan.</p>
+              <p class="confirm-desc">Peminjaman <strong>{{ batalTarget?.warga?.nama_warga ??
+                batalTarget?.warga?.nama_warga
+                  }}</strong> akan dibatalkan dan stok dikembalikan.</p>
               <div class="modal-footer">
                 <button class="btn-cancel" @click="showBatal = false">Tidak</button>
                 <button class="btn-submit btn-danger" :disabled="actionLoading" @click="submitBatal">
-                  <span v-if="actionLoading" class="spinner"></span> Ya, Batalkan
+                  <span v-if="actionLoading" class="spinner"></span>
+                  Ya, Batalkan
                 </button>
               </div>
             </div>
@@ -199,8 +202,14 @@
     <Teleport to="body">
       <Transition name="toast">
         <div v-if="toast.show" :class="['toast', `toast-${toast.type}`]">
-          <svg v-if="toast.type === 'success'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12" /></svg>
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+          <svg v-if="toast.type === 'success'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
           {{ toast.message }}
         </div>
       </Transition>
@@ -221,7 +230,7 @@ const showBatal = ref(false)
 const batalTarget = ref(null)
 const toast = ref({ show: false, type: 'success', message: '' })
 
-// ── Helpers ──
+// ── Helpers ───────────────────────────────────────────────────────────────
 const COLORS = ['#1e3a5f', '#16a34a', '#d97706', '#6366f1', '#0891b2', '#be185d', '#7c3aed']
 function avatarColor(name = '') {
   let h = 0; for (const c of name) h = c.charCodeAt(0) + ((h << 5) - h)
@@ -233,7 +242,7 @@ function isOverdue(p) {
   return p.status === 'Aktif' && p.tgl_rencana_kembali && new Date(p.tgl_rencana_kembali) < new Date()
 }
 
-// ── Stats ──
+// ── Stats ─────────────────────────────────────────────────────────────────
 const stats = computed(() => [
   { label: 'Total', value: store.allPeminjamans.length, color: '#1e3a5f' },
   { label: 'Menunggu', value: store.allPeminjamans.filter(p => p.status === 'Menunggu').length, color: '#d97706' },
@@ -245,6 +254,7 @@ const stats = computed(() => [
   { label: 'Batal', value: store.allPeminjamans.filter(p => p.status === 'Batal').length, color: '#64748b' },
 ])
 
+// Tambah 'Sebagian Kembali' di statusOptions
 const statusOptions = [
   { label: 'Semua', value: '', color: '#94a3b8' },
   { label: 'Menunggu', value: 'Menunggu', color: '#d97706' },
@@ -256,6 +266,7 @@ const statusOptions = [
   { label: 'Batal', value: 'Batal', color: '#64748b' },
 ]
 
+// filteredPeminjamans — tambah case 'Sebagian Kembali'
 const filteredPeminjamans = computed(() => {
   let list = store.peminjamans
 
@@ -280,6 +291,7 @@ const filteredPeminjamans = computed(() => {
   return list
 })
 
+// doFetch — tambah 'Sebagian Kembali' dikirim langsung ke backend
 function doFetch(page = 1) {
   const params = { page, per_page: 15 }
   if (filters.value.status === 'Telat' || filters.value.status === 'Aktif') {
@@ -298,6 +310,7 @@ function setStatus(val) {
 
 function goPage(page) { doFetch(page) }
 
+// ── Toast ─────────────────────────────────────────────────────────────────
 let toastTimer = null
 function showToast(type, message) {
   clearTimeout(toastTimer)
@@ -305,6 +318,7 @@ function showToast(type, message) {
   toastTimer = setTimeout(() => { toast.value.show = false }, 3500)
 }
 
+// ── Aksi ──────────────────────────────────────────────────────────────────
 async function handleKonfirmasi(p) {
   actionLoading.value = p.id
   try {
@@ -337,7 +351,6 @@ onMounted(() => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
-/* ── Base ── */
 .page {
   font-family: 'Plus Jakarta Sans', sans-serif;
   padding: 28px 32px;
@@ -346,14 +359,12 @@ onMounted(() => {
   color: #1a1f2e;
 }
 
-/* ── Header ── */
+/* Header */
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
-  gap: 16px;
-  flex-wrap: wrap; /* Biar aman kalau menyusut di HP */
 }
 
 .header-left {
@@ -371,7 +382,6 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   color: #fff;
-  flex-shrink: 0;
 }
 
 .header-icon svg {
@@ -392,11 +402,9 @@ onMounted(() => {
   margin: 2px 0 0;
 }
 
-/* ── KUNCI JURUS ANTI RAKSASA ── */
 .btn-primary {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
   background: #1e3a5f;
   color: #fff;
@@ -409,22 +417,18 @@ onMounted(() => {
   font-family: inherit;
   text-decoration: none;
   transition: background .2s;
-  width: max-content; 
-  white-space: nowrap; 
-  flex-shrink: 0; 
 }
 
 .btn-primary svg {
   width: 16px;
   height: 16px;
-  flex-shrink: 0;
 }
 
 .btn-primary:hover {
   background: #162d4a;
 }
 
-/* ── Stats ── */
+/* Stats */
 .stats-row {
   display: flex;
   gap: 14px;
@@ -481,7 +485,7 @@ onMounted(() => {
   opacity: .7;
 }
 
-/* ── Toolbar ── */
+/* Toolbar */
 .toolbar {
   display: flex;
   gap: 12px;
@@ -568,7 +572,7 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-/* ── Table ── */
+/* Table */
 .table-card {
   background: #fff;
   border-radius: 14px;
@@ -689,7 +693,7 @@ onMounted(() => {
   font-weight: 600;
 }
 
-/* ── Actions ── */
+/* Actions */
 .action-group {
   display: flex;
   align-items: center;
@@ -757,7 +761,7 @@ onMounted(() => {
   background: #fef2f2;
 }
 
-/* ── Pagination ── */
+/* Pagination */
 .pagination {
   display: flex;
   align-items: center;
@@ -802,7 +806,7 @@ onMounted(() => {
   color: #7a8499;
 }
 
-/* ── Skeleton ── */
+/* Skeleton */
 .skeleton-wrap {
   padding: 8px 0;
 }
@@ -840,9 +844,17 @@ onMounted(() => {
   animation: shimmer 1.4s infinite;
 }
 
-.w55 { width: 55%; }
-.w35 { width: 35%; }
-.w70 { width: 70px; }
+.w55 {
+  width: 55%;
+}
+
+.w35 {
+  width: 35%;
+}
+
+.w70 {
+  width: 70px;
+}
 
 .skel-pill {
   width: 70px;
@@ -863,11 +875,16 @@ onMounted(() => {
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
-/* ── Empty ── */
+/* Empty */
 .empty {
   display: flex;
   flex-direction: column;
@@ -906,7 +923,7 @@ onMounted(() => {
   margin: 0;
 }
 
-/* ── Modal ── */
+/* Modal */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1040,7 +1057,7 @@ onMounted(() => {
   }
 }
 
-/* ── Toast ── */
+/* Toast */
 .toast {
   position: fixed;
   bottom: 28px;
@@ -1074,6 +1091,7 @@ onMounted(() => {
   color: #fff;
 }
 
+/* Transitions */
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity .2s;
@@ -1102,8 +1120,7 @@ onMounted(() => {
   transform: translateY(8px);
 }
 
-/* ── RESPONSIVE MODE (STRATEGI KARTU DI HP) ─────────────────────────────── */
-
+/* ── RESPONSIVE MODE ────────────────────────────────────────────────────── */
 @media (max-width: 992px) {
   .stat-card {
     min-width: calc(33.33% - 14px);
@@ -1117,30 +1134,23 @@ onMounted(() => {
 
   .page-header {
     flex-direction: column;
-    align-items: stretch; /* Supaya isinya bisa selebar layar di HP */
+    align-items: flex-start;
     gap: 16px;
   }
 
   .btn-primary {
-    width: 100%; /* Lebar penuh di HP */
-    max-width: none;
+    width: 100%;
     justify-content: center;
   }
 
-  /* Stat Cards nyesuain */
+  /* Stat Cards */
   .stat-card {
     min-width: calc(50% - 14px);
   }
 
-  /* Table diubah jadi Card Form */
+  /* Table to Card Layout */
   .data-table thead {
     display: none;
-  }
-
-  .data-table tbody {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
   }
 
   .data-row {
@@ -1148,10 +1158,7 @@ onMounted(() => {
     flex-direction: column;
     padding: 16px;
     gap: 12px;
-    border: 1px solid #e8ecf4;
-    border-radius: 12px;
-    background: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    border-bottom: 6px solid #F4F6F9;
   }
 
   .data-table td {
@@ -1170,11 +1177,10 @@ onMounted(() => {
 
   .act-btn {
     flex: 1;
-    height: 38px;
-    border-radius: 8px;
+    height: 36px;
   }
 
-  /* Toolbar Filter */
+  /* Toolbar */
   .toolbar {
     flex-direction: column;
     align-items: stretch;
@@ -1193,15 +1199,6 @@ onMounted(() => {
 
   .chip {
     flex-shrink: 0;
-  }
-
-  /* Toast Pindah Tengah */
-  .toast {
-    left: 20px;
-    right: 20px;
-    bottom: 20px;
-    max-width: none;
-    justify-content: center;
   }
 }
 

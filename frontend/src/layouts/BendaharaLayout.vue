@@ -4,14 +4,11 @@ import { RouterView, RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import {
   LayoutDashboard,
-  Wallet,
   CircleDollarSign,
   Landmark,
   LogOut,
   Bell,
   Menu,
-  Settings,
-  BarChart3,
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
@@ -28,10 +25,8 @@ const initials = computed(() => {
 
 const menuItems = [
   { label: 'Dashboard', to: '/bendahara/dashboard', icon: LayoutDashboard },
-  { label: 'Keuangan', to: '/bendahara/keuangan', icon: Wallet },
   { label: 'Qurban', to: '/bendahara/qurban', icon: CircleDollarSign },
-  { label: 'Laporan', to: '/bendahara/laporan', icon: BarChart3 },
-  { label: 'Kas', to: '/bendahara/kas', icon: Landmark },
+  { label: 'Kas & Donasi', to: '/bendahara/kas', icon: Landmark },
 ]
 
 async function handleLogout() {
@@ -133,9 +128,9 @@ async function handleLogout() {
                   <LayoutDashboard :size="15" />
                   <span>Dashboard</span>
                 </RouterLink>
-                <RouterLink to="/bendahara/keuangan" class="dropdown-link" @click="showProfileMenu = false">
-                  <Wallet :size="15" />
-                  <span>Keuangan</span>
+                <RouterLink to="/bendahara/kas" class="dropdown-link" @click="showProfileMenu = false">
+                  <Landmark :size="15" />
+                  <span>Kas &amp; Donasi</span>
                 </RouterLink>
                 <button type="button" class="dropdown-link danger" @click="handleLogout">
                   <LogOut :size="15" />
